@@ -6,9 +6,10 @@ of Game Boy Advance ROMs, identify each game, find curated box art, convert it
 to SuperFW's compact `.sfcov` format, and install it with the exact filename the
 firmware expects.
 
-SuperCover is in early development. Phases 1-3 provide the safe ROM scanner,
-matching engine, curated Libretro artwork provider, and hardware-compatible
-`.sfcov` exporter. The user always chooses where exported files go.
+SuperCover is in early development. Phases 1-4 provide the safe ROM scanner,
+matching engine, curated Libretro artwork provider, hardware-compatible
+`.sfcov` exporter, and a responsive Windows desktop interface. The user always
+chooses where exported files go.
 
 ## Safety principles
 
@@ -19,7 +20,30 @@ matching engine, curated Libretro artwork provider, and hardware-compatible
 - Conflicting evidence is reported instead of guessed.
 - Cover art packs are not distributed with the application.
 
-## Current command-line usage
+## Windows desktop app
+
+From the repository root, launch the graphical interface with:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m supercover
+```
+
+The app guides the user through choosing a ROM folder, reviewing every match,
+preparing artwork and final-color previews, and choosing the exact export
+folder. The export destination always starts blank and Export remains disabled
+until artwork is ready and a destination has been supplied.
+
+Automatic matches start selected. Fuzzy, conflicting, and unmatched games
+start skipped; select one to approve a suggested title, type a correction, or
+leave it out. A trusted SuperCover JSON catalog can be selected for checksum
+matching, but it is optional—the curated online cover list supplies the normal
+title catalog. See [the desktop app guide](docs/DESKTOP_APP.md).
+
+Phase 5 will package this interface as a single portable Windows executable.
+For now, it runs from Python as shown above.
+
+## Command-line test interface
 
 Run the test suite from the repository root:
 

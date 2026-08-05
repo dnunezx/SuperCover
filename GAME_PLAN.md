@@ -141,7 +141,7 @@ Acceptance criteria:
 | 1: Offline scanner and matcher | Complete |
 | 2: Online artwork provider | Complete |
 | 3: Conversion and installation | Complete |
-| 4: Windows graphical interface | Planned |
+| 4: Windows graphical interface | Complete |
 | 5: Portable application | Planned |
 | 6: Library and hardware verification | Planned |
 
@@ -197,7 +197,7 @@ colors, absolute palette indices 20-239, exact length validation, and a CRC-32
 protected payload.
 
 Export has no default destination. The command-line harness requires the user
-to supply `--export-dir`, and the future GUI will expose the same decision as a
+to supply `--export-dir`, and the desktop GUI exposes the same decision as a
 folder picker. The chosen path is used exactly: it can be a desktop staging
 folder or a mounted SD card's `/.superfw/covers/` directory. An optional,
 separately selected preview directory receives PNGs rendered with the final GBA
@@ -230,6 +230,41 @@ converter, producing byte-for-byte identical results:
   `AC9C9836FC2E7A18BC8D10E7FB014163607A24E4827D08F19D16DFF95EC91095`.
 - The Minish Cap: 5,562 bytes, 173 colors, SHA-256
   `E8DAE4DC2E134B168DF504511F6AF2D1E993BD3720770A54335F5CE823A95D5E`.
+
+## Phase 4 result
+
+Phase 4 added a Windows Tkinter/ttk interface around the tested engine. The
+normal `python -m supercover` entry point opens the desktop app when no command
+arguments are supplied, while the command-line harness remains available for
+development and automation.
+
+The interface separates ROM selection from export selection and deliberately
+starts with a blank export destination. A clear **Choose Export Folder** button
+accepts either a staging directory or the mounted SD card's exact
+`.superfw\covers` folder. Export remains disabled until at least one selected
+game has prepared artwork and the user has supplied a destination.
+
+The review table exposes the include/skip decision, original ROM filename,
+match status, selected artwork title, and artwork/export state for every game.
+Automatic matches start included. Fuzzy, conflicting, and unmatched games start
+skipped; the user can approve a suggestion, type a correction, or leave the
+game out. Manual approval is recorded as the match method while the output
+continues to use the ROM's exact original basename.
+
+The app can combine an optional trusted checksum catalog with the curated
+Libretro title list, so ordinary exact-title matching does not require a user to
+prepare JSON first. Scans, hashing, catalog loading, downloads, preview
+conversion, and export run on a background worker. Network cancellation and
+per-game artwork errors are visible without hiding covers that prepared
+successfully.
+
+Prepared games show their exact final 72-by-72 GBA-color preview. Existing-cover
+policy, offline mode, recursive scanning, and optional preview PNGs are all
+available without a terminal. Fifty-one offline tests cover Phases 1-4,
+including the new review defaults, manual corrections, trusted/provider catalog
+merging, selected-only preparation, final-color previews, and isolated download
+failures. A Windows smoke test also verified the real 1180-by-780 window, blank
+initial destination, disabled Export button, and enabled Scan button.
 
 ## Distribution and licensing
 

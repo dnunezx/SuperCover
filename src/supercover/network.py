@@ -46,7 +46,7 @@ class HttpClient:
         timeout: float = 10.0,
         retries: int = 2,
         max_bytes: int = DEFAULT_MAX_BYTES,
-        user_agent: str = "SuperCover/0.2 (+https://github.com/dnunezx/SuperCover)",
+        user_agent: str = "SuperCover/0.4 (+https://github.com/dnunezx/SuperCover)",
         cancelled: Callable[[], bool] | None = None,
         opener=None,
         sleeper: Callable[[float], None] = time.sleep,
