@@ -22,6 +22,25 @@ preview encoding:
 
 Pillow is distributed under the HPND License.
 
+## PyInstaller
+
+The portable Windows build is created with PyInstaller:
+
+- Project: <https://pyinstaller.org/>
+- Source: <https://github.com/pyinstaller/pyinstaller>
+- Role: build-time freezer and executable bootloader
+- License: GNU General Public License with the PyInstaller bootloader exception
+
+PyInstaller's exception permits distributing the generated application under
+SuperCover's own GPL-3.0-or-later license. PyInstaller is pinned for reproducible
+builds and is not otherwise used by the source application.
+
+## SuperCover application icon
+
+The original SuperCover application icon was generated for this project with
+OpenAI's built-in image generation tool and locally converted into transparent
+PNG and Windows ICO formats. It contains no third-party logo or game artwork.
+
 ## Libretro thumbnails
 
 SuperCover can download user-selected artwork from the Libretro thumbnail

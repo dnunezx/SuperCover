@@ -142,7 +142,7 @@ Acceptance criteria:
 | 2: Online artwork provider | Complete |
 | 3: Conversion and installation | Complete |
 | 4: Windows graphical interface | Complete |
-| 5: Portable application | Planned |
+| 5: Portable application | Complete |
 | 6: Library and hardware verification | Planned |
 
 ## Phase 1 result
@@ -265,6 +265,35 @@ including the new review defaults, manual corrections, trusted/provider catalog
 merging, selected-only preparation, final-color previews, and isolated download
 failures. A Windows smoke test also verified the real 1180-by-780 window, blank
 initial destination, disabled Export button, and enabled Scan button.
+
+## Phase 5 result
+
+Phase 5 packages SuperCover 0.5.0 as a single windowed Windows 10/11 x64
+executable with PyInstaller 6.21.0. The build is pinned, reproducible, uses no
+UPX compression, and embeds Python, Pillow, Tkinter/Tcl/Tk, the application
+code, legal notices, a multi-resolution application icon, and Windows version
+metadata. The executable requires no Python installation, installer,
+administrator rights, registry entries, or system-folder writes.
+
+The original blue-and-gold SuperCover icon combines a framed cover-art tile,
+game cartridge, and verification mark. It is embedded in the executable and
+bundled for the Tkinter window so Explorer, the taskbar, and title bar share the
+same identity. The About dialog identifies the version, GPL-3.0-or-later
+license, Libretro artwork source, notices, and project repository.
+
+The clean Windows GitHub Actions build installs the application and pinned
+freezer, runs the complete offline test suite, creates `SuperCover.exe`, runs a
+self-test inside the frozen process, checks the embedded `0.5.0.0` product
+version, packages the executable with its license, notices, and README, and
+uploads `SuperCover-0.5.0-windows-x64.zip` as the workflow artifact.
+
+The frozen self-test validates embedded Python, Tkinter 8.6, Pillow, and the
+72-by-72 `.sfcov` conversion path. The local one-file build was approximately
+30 MB in a development environment and passed with `frozen: true`, a valid
+5,218-byte test cover, and the expected Windows file and product metadata.
+Fifty-six source tests now cover Phases 1-5. The release remains intentionally
+unsigned, so the documentation explains that Windows may show an unfamiliar-app
+warning and directs users to the verified repository workflow artifact.
 
 ## Distribution and licensing
 

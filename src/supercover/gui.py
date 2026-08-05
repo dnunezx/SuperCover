@@ -19,6 +19,7 @@ from .libretro import LibretroProvider
 from .matching import match_roms
 from .network import DownloadCancelled, HttpClient
 from .scanner import scan_roms
+from .version import __version__
 from .workflow import (
     CoverSession,
     assign_export_results,
@@ -27,7 +28,6 @@ from .workflow import (
 )
 
 
-APP_VERSION = "0.4.0"
 POLICY_LABELS = {
     "Preserve existing covers": ExistingFilePolicy.SKIP,
     "Replace existing covers": ExistingFilePolicy.REPLACE,
@@ -43,12 +43,25 @@ def application_dir() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def bundled_resource(*parts: str) -> Path:
+    """Locate source assets or files unpacked from the one-file executable."""
+
+    root = Path(getattr(sys, "_MEIPASS", application_dir()))
+    return root.joinpath(*parts)
+
+
 class SuperCoverApp:
     """A responsive, review-first Tkinter interface."""
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title(f"SuperCover {APP_VERSION}")
+        self.root.title(f"SuperCover {__version__}")
+        try:
+            self.root.iconbitmap(
+                default=str(bundled_resource("assets", "supercover.ico"))
+            )
+        except tk.TclError:
+            pass
         self.root.minsize(980, 700)
         self.root.geometry("1180x780")
         self.root.protocol("WM_DELETE_WINDOW", self._close)
@@ -95,6 +108,7 @@ class SuperCoverApp:
 
         header = ttk.Frame(outer)
         header.pack(fill="x", pady=(0, 12))
+        ttk.Button(header, text="About", command=self._show_about).pack(side="right")
         ttk.Label(header, text="SuperCover", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             header,
@@ -308,6 +322,17 @@ class SuperCoverApp:
         selected = filedialog.askdirectory(title="Choose your GBA game folder", mustexist=True)
         if selected:
             self.rom_folder.set(selected)
+
+    def _show_about(self) -> None:
+        messagebox.showinfo(
+            "About SuperCover",
+            f"SuperCover {__version__}\n\n"
+            "Portable GBA cover-art manager for SuperFW.\n\n"
+            "Licensed under GPL-3.0-or-later. Online artwork metadata comes "
+            "from the curated Libretro GBA thumbnail project.\n\n"
+            "See LICENSE and THIRD_PARTY_NOTICES in the release folder for details.\n\n"
+            "github.com/dnunezx/SuperCover",
+        )
 
     def _browse_export(self) -> None:
         selected = filedialog.askdirectory(

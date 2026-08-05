@@ -8,6 +8,8 @@ from typing import Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from .version import __version__
+
 
 DEFAULT_MAX_BYTES = 8 * 1024 * 1024
 READ_CHUNK_SIZE = 64 * 1024
@@ -46,7 +48,7 @@ class HttpClient:
         timeout: float = 10.0,
         retries: int = 2,
         max_bytes: int = DEFAULT_MAX_BYTES,
-        user_agent: str = "SuperCover/0.4 (+https://github.com/dnunezx/SuperCover)",
+        user_agent: str = f"SuperCover/{__version__} (+https://github.com/dnunezx/SuperCover)",
         cancelled: Callable[[], bool] | None = None,
         opener=None,
         sleeper: Callable[[float], None] = time.sleep,

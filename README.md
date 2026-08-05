@@ -6,10 +6,10 @@ of Game Boy Advance ROMs, identify each game, find curated box art, convert it
 to SuperFW's compact `.sfcov` format, and install it with the exact filename the
 firmware expects.
 
-SuperCover is in early development. Phases 1-4 provide the safe ROM scanner,
+SuperCover is in early development. Phases 1-5 provide the safe ROM scanner,
 matching engine, curated Libretro artwork provider, hardware-compatible
-`.sfcov` exporter, and a responsive Windows desktop interface. The user always
-chooses where exported files go.
+`.sfcov` exporter, responsive Windows desktop interface, and portable x64
+executable. The user always chooses where exported files go.
 
 ## Safety principles
 
@@ -20,7 +20,22 @@ chooses where exported files go.
 - Conflicting evidence is reported instead of guessed.
 - Cover art packs are not distributed with the application.
 
-## Windows desktop app
+## Portable Windows app
+
+Every successful **Build portable Windows app** workflow run provides
+`SuperCover-0.5.0-windows-x64.zip`. Download and extract that archive, then
+double-click `SuperCover.exe`. It needs no installer, Python installation,
+administrator rights, or registry changes. See the
+[portable Windows guide](docs/PORTABLE_WINDOWS.md).
+
+SuperCover stores its optional `.supercover-cache` beside the executable. To
+remove the program completely, delete `SuperCover.exe` and that cache folder.
+
+The current build is not code-signed, so Windows may show an unfamiliar-app
+warning. Download it only from this repository's GitHub Actions page and keep
+the accompanying license and third-party notices.
+
+## Run the desktop app from source
 
 From the repository root, launch the graphical interface with:
 
@@ -39,9 +54,6 @@ start skipped; select one to approve a suggested title, type a correction, or
 leave it out. A trusted SuperCover JSON catalog can be selected for checksum
 matching, but it is optional—the curated online cover list supplies the normal
 title catalog. See [the desktop app guide](docs/DESKTOP_APP.md).
-
-Phase 5 will package this interface as a single portable Windows executable.
-For now, it runs from Python as shown above.
 
 ## Command-line test interface
 

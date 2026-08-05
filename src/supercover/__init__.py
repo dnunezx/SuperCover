@@ -31,6 +31,7 @@ from .models import CatalogEntry, MatchResult, MatchStatus, RomFile
 from .network import DownloadCancelled, HttpClient, HttpStatusError, NetworkError
 from .scanner import scan_roms
 from .sfcov import Cover, CoverFormatError
+from .version import __version__
 
 __all__ = [
     "ArtworkCandidate",
@@ -68,4 +69,5 @@ __all__ = [
     "scan_roms",
     "thumbnail_filename",
     "validate_png",
+    "__version__",
 ]
