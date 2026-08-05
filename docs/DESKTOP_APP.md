@@ -22,16 +22,19 @@ Phase 5 will replace this development command with a portable `.exe`.
 3. Optionally choose a trusted SuperCover JSON catalog for checksum matching.
    Without one, the app safely matches against titles in Libretro's curated GBA
    box-art list.
-4. Select **Scan and Match Games**.
-5. Review the table before downloading anything:
+4. Leave **Export size** at the default 77 x 77, or choose 72 x 72 for legacy
+   compatibility.
+5. Select **Scan and Match Games**.
+6. Review the table before downloading anything:
    - Automatic exact-name or checksum matches start included.
    - Fuzzy, conflicting, and unmatched games start skipped.
    - Select a row to approve its suggestion, type a corrected artwork title,
      include it, or skip it.
-6. Select **Prepare Selected Artwork**. Downloads and conversion previews run
+7. Select **Prepare Selected Artwork**. Downloads and conversion previews run
    in the background, and each row reports whether its artwork is ready.
-7. Inspect the final 72-by-72 GBA-color preview for each prepared game.
-8. Select **Export Covers**. SuperCover writes only to the selected destination
+8. Inspect the final GBA-color preview at the selected export size for each
+   prepared game.
+9. Select **Export Covers**. SuperCover writes only to the selected destination
    and shows a completion summary.
 
 ## Existing cover choices

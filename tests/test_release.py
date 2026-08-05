@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from supercover.gui import bundled_resource  # noqa: E402
 from supercover.release import main as release_main, run_self_test  # noqa: E402
 from supercover.version import __version__  # noqa: E402
+from supercover.sfcov import HEIGHT, WIDTH  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +43,10 @@ class PortableReleaseTest(unittest.TestCase):
             self.assertEqual(report["status"], "ok")
             self.assertFalse(report["frozen"])
             self.assertEqual(saved["version"], __version__)
-            self.assertEqual((saved["cover_width"], saved["cover_height"]), (72, 72))
+            self.assertEqual(
+                (saved["cover_width"], saved["cover_height"]),
+                (WIDTH, HEIGHT),
+            )
             self.assertGreater(saved["cover_bytes"], 5_000)
 
     def test_release_entry_supports_self_test_and_rejects_unknown_arguments(self):

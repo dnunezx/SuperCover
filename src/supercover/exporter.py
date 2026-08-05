@@ -14,7 +14,7 @@ from typing import Iterable
 from .artwork import ArtworkDownload, InvalidArtwork, validate_png
 from .converter import cover_to_image, image_bytes_to_cover
 from .models import MatchResult, MatchStatus
-from .sfcov import Cover, VERSION, WIDTH, HEIGHT
+from .sfcov import Cover, VERSION, WIDTH
 from .storage import write_atomic
 
 
@@ -189,6 +189,7 @@ def export_covers(
     mode: str = "cover",
     background: tuple[int, int, int] = (0, 0, 0),
     dither: str = "floyd-steinberg",
+    size: int = WIDTH,
 ) -> list[ExportResult]:
     """Convert and export a batch only to the exact folders supplied by the user."""
 
@@ -222,6 +223,7 @@ def export_covers(
                 mode=mode,
                 background=background,
                 dither=dither,
+                size=size,
             )
             encoded = cover.to_bytes()
             Cover.from_bytes(encoded)
@@ -273,8 +275,8 @@ def export_covers(
             "source_height": artwork.height,
             "cover_sha256": hashlib.sha256(encoded).hexdigest().upper(),
             "format_version": VERSION,
-            "width": WIDTH,
-            "height": HEIGHT,
+            "width": cover.width,
+            "height": cover.height,
             "palette_colors": len(cover.palette),
             "resize_mode": mode,
             "dither": dither,

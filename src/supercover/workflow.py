@@ -14,6 +14,7 @@ from .libretro import LibretroProvider
 from .matching import normalize_title
 from .models import CatalogEntry, MatchResult, MatchStatus
 from .network import DownloadCancelled, NetworkError
+from .sfcov import WIDTH
 
 
 ProgressCallback = Callable[[int, int, str], None]
@@ -30,6 +31,7 @@ class GameChoice:
     included: bool
     artwork: ArtworkDownload | None = None
     preview_png: bytes | None = None
+    preview_size: int | None = None
     artwork_message: str = "Not prepared"
     export_result: ExportResult | None = None
 
@@ -57,6 +59,7 @@ class GameChoice:
         self.included = True
         self.artwork = None
         self.preview_png = None
+        self.preview_size = None
         self.artwork_message = "Ready to prepare"
         self.export_result = None
 
@@ -149,9 +152,11 @@ def merge_catalogs(
     return sorted(entries.values(), key=lambda entry: entry.name.casefold())
 
 
-def _preview_bytes(artwork: ArtworkDownload) -> bytes:
+def artwork_preview_bytes(artwork: ArtworkDownload, size: int = WIDTH) -> bytes:
+    """Render downloaded artwork exactly as it will appear at the chosen size."""
+
     source = artwork.path.read_bytes()
-    cover = image_bytes_to_cover(source)
+    cover = image_bytes_to_cover(source, size=size)
     stream = io.BytesIO()
     cover_to_image(cover).save(stream, format="PNG")
     return stream.getvalue()
@@ -170,6 +175,7 @@ def prepare_session_artwork(
     *,
     progress: ProgressCallback | None = None,
     cancelled: CancelledCallback | None = None,
+    size: int = WIDTH,
 ) -> PreparationSummary:
     """Download and preview approved games while isolating per-game failures."""
 
@@ -184,11 +190,13 @@ def prepare_session_artwork(
             progress(position - 1, len(selected), game.original.rom.filename)
         game.artwork = None
         game.preview_png = None
+        game.preview_size = None
         game.export_result = None
         try:
             artwork = provider.download_for_title(game.selected_entry.name)
             game.artwork = artwork
-            game.preview_png = _preview_bytes(artwork)
+            game.preview_png = artwork_preview_bytes(artwork, size)
+            game.preview_size = size
             game.artwork_message = "Ready (cached)" if artwork.from_cache else "Ready"
             prepared += 1
         except DownloadCancelled:

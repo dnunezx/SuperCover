@@ -19,9 +19,11 @@ from .libretro import LibretroProvider
 from .matching import match_roms
 from .network import DownloadCancelled, HttpClient
 from .scanner import scan_roms
+from .sfcov import LEGACY_SIZE, WIDTH
 from .version import __version__
 from .workflow import (
     CoverSession,
+    artwork_preview_bytes,
     assign_export_results,
     merge_catalogs,
     prepare_session_artwork,
@@ -32,6 +34,11 @@ POLICY_LABELS = {
     "Preserve existing covers": ExistingFilePolicy.SKIP,
     "Replace existing covers": ExistingFilePolicy.REPLACE,
     "Keep both (comparison only)": ExistingFilePolicy.KEEP_BOTH,
+}
+
+EXPORT_SIZE_LABELS = {
+    f"{WIDTH} x {WIDTH} (default)": WIDTH,
+    f"{LEGACY_SIZE} x {LEGACY_SIZE}": LEGACY_SIZE,
 }
 
 
@@ -80,6 +87,7 @@ class SuperCoverApp:
         self.offline = tk.BooleanVar(value=False)
         self.save_previews = tk.BooleanVar(value=False)
         self.existing_policy = tk.StringVar(value="Preserve existing covers")
+        self.export_size = tk.StringVar(value=next(iter(EXPORT_SIZE_LABELS)))
         self.review_title = tk.StringVar()
         self.status_text = tk.StringVar(value="Choose a ROM folder to begin.")
         self.summary_text = tk.StringVar(value="No games scanned yet")
@@ -87,6 +95,7 @@ class SuperCoverApp:
         self._configure_styles()
         self._build_interface()
         self.export_folder.trace_add("write", self._export_folder_changed)
+        self.export_size.trace_add("write", self._export_size_changed)
         self._set_action_states()
 
     def _configure_styles(self) -> None:
@@ -173,13 +182,24 @@ class SuperCoverApp:
             text="Save PNG previews in an export subfolder",
             variable=self.save_previews,
         ).pack(side="left", padx=(18, 0))
-        ttk.Label(options, text="Existing covers:").pack(side="left", padx=(18, 5))
+
+        export_options = ttk.Frame(setup)
+        export_options.grid(row=6, column=1, columnspan=2, sticky="w", pady=(6, 0))
+        ttk.Label(export_options, text="Existing covers:").pack(side="left", padx=(0, 5))
         ttk.Combobox(
-            options,
+            export_options,
             textvariable=self.existing_policy,
             values=tuple(POLICY_LABELS),
             state="readonly",
             width=27,
+        ).pack(side="left")
+        ttk.Label(export_options, text="Export size:").pack(side="left", padx=(18, 5))
+        ttk.Combobox(
+            export_options,
+            textvariable=self.export_size,
+            values=tuple(EXPORT_SIZE_LABELS),
+            state="readonly",
+            width=17,
         ).pack(side="left")
 
         actions = ttk.Frame(outer)
@@ -291,7 +311,7 @@ class SuperCoverApp:
 
         self.preview_label = ttk.Label(
             review_frame,
-            text="The final 72 x 72 GBA-color preview will appear here.",
+            text=f"The final {WIDTH} x {WIDTH} GBA-color preview will appear here.",
             anchor="center",
             justify="center",
             relief="solid",
@@ -344,6 +364,19 @@ class SuperCoverApp:
 
     def _export_folder_changed(self, *_args) -> None:
         self._set_action_states()
+
+    def _selected_export_size(self) -> int:
+        return EXPORT_SIZE_LABELS[self.export_size.get()]
+
+    def _export_size_changed(self, *_args) -> None:
+        if self.session is None or not self.games_table.selection():
+            size = self._selected_export_size()
+            self.preview_label.configure(
+                image="",
+                text=f"The final {size} x {size} GBA-color preview will appear here.",
+            )
+            return
+        self._show_selected_game()
 
     def _browse_catalog(self) -> None:
         selected = filedialog.askopenfilename(
@@ -406,6 +439,7 @@ class SuperCoverApp:
             return
         session = self.session
         offline = self.offline.get()
+        export_size = self._selected_export_size()
 
         def work(progress):
             return prepare_session_artwork(
@@ -413,6 +447,7 @@ class SuperCoverApp:
                 self._provider(offline),
                 progress=progress,
                 cancelled=self._cancel.is_set,
+                size=export_size,
             )
 
         self._run_background(work, self._prepare_complete)
@@ -441,6 +476,7 @@ class SuperCoverApp:
         destination = Path(destination_text)
         preview_dir = destination / "SuperCover Previews" if self.save_previews.get() else None
         policy = POLICY_LABELS[self.existing_policy.get()]
+        export_size = self._selected_export_size()
 
         def work(progress):
             requests = session.export_requests()
@@ -450,6 +486,7 @@ class SuperCoverApp:
                 destination,
                 preview_dir=preview_dir,
                 existing=policy,
+                size=export_size,
             )
             assign_export_results(session, results)
             progress(1, 1, "Export complete")
@@ -553,6 +590,7 @@ class SuperCoverApp:
         if index is None:
             return
         game = self.session.games[index]
+        export_size = self._selected_export_size()
         self.selected_rom_label.configure(text=game.original.rom.filename)
         self.selected_message.configure(
             text=f"{game.original.message}\nArtwork: {game.artwork_message}"
@@ -561,6 +599,13 @@ class SuperCoverApp:
         self.include_button.configure(
             text="Skip This Game" if game.included else "Include This Game"
         )
+        if game.artwork is not None and game.preview_size != export_size:
+            try:
+                game.preview_png = artwork_preview_bytes(game.artwork, export_size)
+                game.preview_size = export_size
+            except (OSError, ValueError):
+                game.preview_png = None
+                game.preview_size = None
         if game.preview_png:
             with Image.open(io.BytesIO(game.preview_png)) as image:
                 preview = image.convert("RGB").resize((216, 216), Image.Resampling.NEAREST)
@@ -570,7 +615,10 @@ class SuperCoverApp:
             self._preview_photo = None
             self.preview_label.configure(
                 image="",
-                text="Prepare this game's artwork to see its final 72 x 72 GBA-color preview.",
+                text=(
+                    "Prepare this game's artwork to see its final "
+                    f"{export_size} x {export_size} GBA-color preview."
+                ),
             )
 
     def _run_background(self, work: Callable, success: Callable) -> None:

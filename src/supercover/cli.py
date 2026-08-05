@@ -23,6 +23,7 @@ from . import (
     match_roms,
     scan_roms,
 )
+from .sfcov import LEGACY_SIZE, WIDTH
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -72,10 +73,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="existing cover policy: skip, replace, or keep-both (default: skip)",
     )
     parser.add_argument(
+        "--export-size",
+        type=int,
+        choices=(WIDTH, LEGACY_SIZE),
+        default=WIDTH,
+        help=f"square cover size in pixels (default: {WIDTH})",
+    )
+    parser.add_argument(
         "--resize-mode",
         choices=("cover", "contain"),
         default="cover",
-        help="crop to fill or letterbox the 72x72 cover (default: cover)",
+        help="crop to fill or letterbox the square cover (default: cover)",
     )
     parser.add_argument(
         "--dither",
@@ -179,6 +187,7 @@ def main(argv: list[str] | None = None) -> int:
                 existing=args.existing,
                 mode=args.resize_mode,
                 dither=args.dither,
+                size=args.export_size,
             )
             for item in exported:
                 exact_firmware_name = (
