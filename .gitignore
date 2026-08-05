@@ -10,6 +10,7 @@ dist/
 # Local catalogs, downloaded artwork, caches, and generated covers
 catalog.json
 cache/
+.supercover-cache/
 downloads/
 output/
 *.sfcov

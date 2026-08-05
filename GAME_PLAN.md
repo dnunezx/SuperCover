@@ -139,7 +139,7 @@ Acceptance criteria:
 | Phase | Status |
 | --- | --- |
 | 1: Offline scanner and matcher | Complete |
-| 2: Online artwork provider | Planned |
+| 2: Online artwork provider | Complete |
 | 3: Conversion and installation | Planned |
 | 4: Windows graphical interface | Planned |
 | 5: Portable application | Planned |
@@ -154,6 +154,39 @@ automatic, review, conflict, or unmatched. Twelve offline tests cover nested
 and non-recursive scans, hash accuracy, malformed catalogs, exact-name matches,
 renamed-ROM checksum matches, conflicting evidence, fuzzy review, and unrelated
 games. The scanner never opens a ROM for writing.
+
+## Phase 2 result
+
+Phase 2 added the curated Libretro Game Boy Advance `Named_Boxarts` provider.
+SuperCover downloads and caches the provider's real index, applies Libretro's
+documented unsafe-character replacement, and accepts only exact canonical title
+matches. It never falls back to generic image search or silently downloads a
+fuzzy match.
+
+The dependency-free network layer provides bounded responses, timeouts,
+temporary-error retries with backoff, a cancellation callback, and a clear
+offline mode. The seven-day index cache falls back to a valid stale copy during
+an outage. Images are written atomically only after PNG structure, dimensions,
+chunk checksums, supported encoding, compressed data, and expansion limits have
+been validated. Existing cached data is not replaced by a failed download.
+
+Every successful result records the provider name and page, exact source URL
+and filename, original dimensions, cache path, and whether the network or cache
+was used. The command-line test interface fetches artwork only for automatic
+matches and can emit the complete record as JSON.
+
+Twenty-nine offline tests cover the Phase 1 engine plus index parsing and
+caching, exact lookup, Libretro filename rules, stale and offline behavior,
+missing and disappeared art, download attribution, retry and cancellation,
+size limits, corrupt and incomplete PNG data, atomic failure behavior, and the
+end-to-end command report. A live smoke test found and validated:
+
+- `Metal Slug Advance (USA).png` at 256 by 229 pixels.
+- `Legend of Zelda, The - The Minish Cap (USA).png` at 512 by 512 pixels.
+
+Both images were then loaded successfully in strict offline mode from the local
+cache. Phase 3 will crop or resize these source shapes into SuperFW's required
+72-by-72 square `.sfcov` format.
 
 ## Distribution and licensing
 

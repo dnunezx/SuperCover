@@ -6,8 +6,9 @@ of Game Boy Advance ROMs, identify each game, find curated box art, convert it
 to SuperFW's compact `.sfcov` format, and install it with the exact filename the
 firmware expects.
 
-SuperCover is in early development. Phase 1 provides the safe, offline ROM
-scanner and matching engine. It does not download artwork or modify files yet.
+SuperCover is in early development. Phases 1 and 2 provide the safe ROM scanner,
+matching engine, and curated Libretro artwork provider. It downloads validated
+artwork into a local cache but does not convert or install covers yet.
 
 ## Safety principles
 
@@ -18,7 +19,7 @@ scanner and matching engine. It does not download artwork or modify files yet.
 - Conflicting evidence is reported instead of guessed.
 - Cover art packs are not distributed with the application.
 
-## Phase 1 usage
+## Current command-line usage
 
 Run the test suite from the repository root:
 
@@ -40,7 +41,25 @@ $env:PYTHONPATH = "src"
 python -m supercover "D:\GBA Games" --catalog catalog.json
 ```
 
-The Phase 1 catalog format is intentionally simple:
+Download exact Libretro box art for automatic matches:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m supercover "D:\GBA Games" --catalog catalog.json --fetch-artwork
+```
+
+Artwork and the provider index are cached under `.supercover-cache` by default.
+Once downloaded, the same scan can run without network access:
+
+```powershell
+python -m supercover "D:\GBA Games" --catalog catalog.json --fetch-artwork --offline
+```
+
+Use `--cache-dir` to select another cache folder and `--refresh-artwork` to
+refresh both the provider index and matched images. Fuzzy, conflicting, and
+unmatched games are never downloaded automatically.
+
+The current catalog format is intentionally simple:
 
 ```json
 [
@@ -70,6 +89,14 @@ The complete six-phase plan is in [GAME_PLAN.md](GAME_PLAN.md):
 
 SuperCover is an independent companion project. It is not an official part of
 SuperFW and does not include SuperFW firmware or copyrighted game artwork.
+
+## Artwork provider
+
+Online artwork comes from the curated
+[Libretro Game Boy Advance thumbnail repository](https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance)
+and its public `Named_Boxarts` service. SuperCover records the provider page,
+exact source URL, and source filename for every successful download. It does
+not redistribute a cover pack.
 
 ## License
 

@@ -1,15 +1,20 @@
 import hashlib
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 import sys
+from unittest.mock import patch
 import zlib
 
 # Keep the Phase 1 test suite runnable without installing the package first.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from supercover import (  # noqa: E402
+    ArtworkCandidate,
+    ArtworkDownload,
     CatalogEntry,
     MatchStatus,
     load_catalog,
@@ -17,6 +22,7 @@ from supercover import (  # noqa: E402
     normalize_title,
     scan_roms,
 )
+from supercover.cli import main as cli_main  # noqa: E402
 
 
 class SuperCoverTest(unittest.TestCase):
@@ -136,6 +142,57 @@ class SuperCoverTest(unittest.TestCase):
 
     def test_normalization_handles_extension_punctuation_and_ampersand(self):
         self.assertEqual(normalize_title("Rock & Roll.GBA"), "rock and roll")
+
+    def test_cli_records_artwork_source_for_an_automatic_match(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            rom_dir = root / "roms"
+            rom_dir.mkdir()
+            (rom_dir / "Metal Slug Advance (USA).gba").write_bytes(b"synthetic")
+            catalog = root / "catalog.json"
+            catalog.write_text(
+                json.dumps([{"name": "Metal Slug Advance (USA)"}]),
+                encoding="utf-8",
+            )
+            candidate = ArtworkCandidate(
+                provider="Libretro GBA Thumbnails",
+                title="Metal Slug Advance (USA)",
+                filename="Metal Slug Advance (USA).png",
+                url="https://thumbnails.example/Metal%20Slug%20Advance.png",
+                provider_url="https://github.com/libretro-thumbnails/example",
+            )
+            artwork = ArtworkDownload(
+                candidate=candidate,
+                path=root / "cache" / "artwork.png",
+                from_cache=False,
+                width=256,
+                height=229,
+            )
+            provider = unittest.mock.Mock()
+            provider.download_for_title.return_value = artwork
+            output = io.StringIO()
+
+            with patch("supercover.cli.LibretroProvider", return_value=provider):
+                with redirect_stdout(output):
+                    exit_code = cli_main(
+                        [
+                            str(rom_dir),
+                            "--catalog",
+                            str(catalog),
+                            "--fetch-artwork",
+                            "--json",
+                        ]
+                    )
+
+            self.assertEqual(exit_code, 0)
+            report = json.loads(output.getvalue())[0]
+            self.assertEqual(report["artwork"]["status"], "downloaded")
+            self.assertEqual(report["artwork"]["provider"], candidate.provider)
+            self.assertEqual(report["artwork"]["provider_url"], candidate.provider_url)
+            self.assertEqual(report["artwork"]["source_url"], candidate.url)
+            self.assertEqual(report["artwork"]["source_filename"], candidate.filename)
+            self.assertEqual(report["artwork"]["width"], 256)
+            self.assertEqual(report["artwork"]["height"], 229)
 
 
 if __name__ == "__main__":
