@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.pytest_cache/
+.venv/
+build/
+dist/
+
+# Local catalogs, downloaded artwork, caches, and generated covers
+catalog.json
+cache/
+downloads/
+output/
+*.sfcov
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
