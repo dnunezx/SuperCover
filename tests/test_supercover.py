@@ -9,6 +9,8 @@ import sys
 from unittest.mock import patch
 import zlib
 
+from PIL import Image
+
 # Keep the Phase 1 test suite runnable without installing the package first.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -16,6 +18,7 @@ from supercover import (  # noqa: E402
     ArtworkCandidate,
     ArtworkDownload,
     CatalogEntry,
+    Cover,
     MatchStatus,
     load_catalog,
     match_rom,
@@ -193,6 +196,57 @@ class SuperCoverTest(unittest.TestCase):
             self.assertEqual(report["artwork"]["source_filename"], candidate.filename)
             self.assertEqual(report["artwork"]["width"], 256)
             self.assertEqual(report["artwork"]["height"], 229)
+
+    def test_cli_exports_only_to_the_folder_selected_by_the_user(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            rom_dir = root / "roms"
+            rom_dir.mkdir()
+            rom_name = "Legend of Zelda, The - The Minish Cap (USA).gba"
+            (rom_dir / rom_name).write_bytes(b"synthetic")
+            catalog = root / "catalog.json"
+            title = "Legend of Zelda, The - The Minish Cap (USA)"
+            catalog.write_text(json.dumps([{"name": title}]), encoding="utf-8")
+            source = root / "cache" / "minish-cap.png"
+            source.parent.mkdir()
+            Image.new("RGB", (512, 512), (20, 160, 60)).save(source)
+            candidate = ArtworkCandidate(
+                provider="Libretro GBA Thumbnails",
+                title=title,
+                filename=f"{title}.png",
+                url="https://thumbnails.example/minish-cap.png",
+                provider_url="https://github.com/libretro-thumbnails/example",
+            )
+            artwork = ArtworkDownload(candidate, source, True, 512, 512)
+            provider = unittest.mock.Mock()
+            provider.download_for_title.return_value = artwork
+            selected = root / "my selected export"
+            previews = root / "my selected previews"
+            output = io.StringIO()
+
+            with patch("supercover.cli.LibretroProvider", return_value=provider):
+                with redirect_stdout(output):
+                    exit_code = cli_main(
+                        [
+                            str(rom_dir),
+                            "--catalog",
+                            str(catalog),
+                            "--export-dir",
+                            str(selected),
+                            "--preview-dir",
+                            str(previews),
+                            "--json",
+                        ]
+                    )
+
+            self.assertEqual(exit_code, 0)
+            cover_path = selected / Path(rom_name).with_suffix(".sfcov").name
+            preview_path = previews / Path(rom_name).with_suffix(".png").name
+            Cover.read(cover_path)
+            self.assertTrue(preview_path.is_file())
+            report = json.loads(output.getvalue())[0]
+            self.assertEqual(report["export"]["path"], str(cover_path.resolve()))
+            self.assertTrue(report["export"]["exact_firmware_name"])
 
 
 if __name__ == "__main__":

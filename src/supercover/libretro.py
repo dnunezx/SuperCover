@@ -6,9 +6,7 @@ import hashlib
 from html import unescape
 from html.parser import HTMLParser
 import json
-import os
 from pathlib import Path
-import tempfile
 import time
 from urllib.parse import quote, unquote, urlsplit
 
@@ -21,6 +19,7 @@ from .artwork import (
     validate_png,
 )
 from .network import DownloadCancelled, HttpClient, HttpStatusError, NetworkError
+from .storage import write_atomic
 
 
 PROVIDER_NAME = "Libretro GBA Thumbnails"
@@ -78,21 +77,6 @@ def parse_boxart_index(html: bytes) -> tuple[str, ...]:
     if not parser.filenames:
         raise NetworkError("Libretro artwork index contains no PNG files")
     return tuple(parser.filenames)
-
-
-def _write_atomic(path: Path, data: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
 
 
 class LibretroProvider:
@@ -154,7 +138,7 @@ class LibretroProvider:
             indent=2,
             sort_keys=True,
         ).encode("utf-8")
-        _write_atomic(self.index_cache_path, payload)
+        write_atomic(self.index_cache_path, payload)
 
     def load_index(self, *, refresh: bool = False) -> tuple[str, ...]:
         """Load a fresh index, falling back to a valid stale cache on failure."""
@@ -236,7 +220,7 @@ class LibretroProvider:
                 ) from exc
             raise
         width, height = validate_png(payload.data)
-        _write_atomic(path, payload.data)
+        write_atomic(path, payload.data)
         return ArtworkDownload(candidate, path, False, width, height)
 
     def download_for_title(

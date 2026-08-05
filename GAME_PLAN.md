@@ -140,7 +140,7 @@ Acceptance criteria:
 | --- | --- |
 | 1: Offline scanner and matcher | Complete |
 | 2: Online artwork provider | Complete |
-| 3: Conversion and installation | Planned |
+| 3: Conversion and installation | Complete |
 | 4: Windows graphical interface | Planned |
 | 5: Portable application | Planned |
 | 6: Library and hardware verification | Planned |
@@ -187,6 +187,49 @@ end-to-end command report. A live smoke test found and validated:
 Both images were then loaded successfully in strict offline mode from the local
 cache. Phase 3 will crop or resize these source shapes into SuperFW's required
 72-by-72 square `.sfcov` format.
+
+## Phase 3 result
+
+Phase 3 integrated SuperFW's proven version 2 `.sfcov` format and conversion
+logic. Pillow performs desktop image decoding, resizing, and quantization;
+SuperCover produces a fixed 72-by-72 indexed image with at most 220 GBA BGR555
+colors, absolute palette indices 20-239, exact length validation, and a CRC-32
+protected payload.
+
+Export has no default destination. The command-line harness requires the user
+to supply `--export-dir`, and the future GUI will expose the same decision as a
+folder picker. The chosen path is used exactly: it can be a desktop staging
+folder or a mounted SD card's `/.superfw/covers/` directory. An optional,
+separately selected preview directory receives PNGs rendered with the final GBA
+colors.
+
+Output filenames retain the exact ROM basename and change only `.gba` to
+`.sfcov`. Case-insensitive duplicate basenames are rejected before conversion
+because SuperFW uses one flat cover directory. Existing-file policies are Skip
+(default), Replace, and Keep Both. Skip preserves the existing bytes; Replace
+uses atomic replacement; Keep Both chooses a numbered comparison filename and
+reports that it will not automatically match the ROM in firmware.
+
+Every batch validates its artwork identity and cached PNG, converts and
+revalidates every requested cover before writing the first output, then uses
+same-directory temporary files and atomic replacement. A failed image in a
+batch therefore cannot leave partial conversion output. The user-selected
+folder also receives an atomic `.supercover-export.json` manifest containing
+ROM hashes, match evidence, artwork attribution, conversion settings, and the
+SHA-256 of each final cover.
+
+Forty-five offline tests now cover Phases 1-3, including strict format parsing,
+palette bounds, CRC protection, exact export paths,
+ROM immutability, firmware filenames, manifest attribution, previews, all three
+existing-file policies, basename collisions, identity mismatches, batch failure
+safety, and the complete command workflow. The two real cached test artworks
+were also converted by both SuperCover and the original hardware-tested SuperFW
+converter, producing byte-for-byte identical results:
+
+- Metal Slug Advance: 5,634 bytes, 209 colors, SHA-256
+  `AC9C9836FC2E7A18BC8D10E7FB014163607A24E4827D08F19D16DFF95EC91095`.
+- The Minish Cap: 5,562 bytes, 173 colors, SHA-256
+  `E8DAE4DC2E134B168DF504511F6AF2D1E993BD3720770A54335F5CE823A95D5E`.
 
 ## Distribution and licensing
 

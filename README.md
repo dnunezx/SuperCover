@@ -6,9 +6,9 @@ of Game Boy Advance ROMs, identify each game, find curated box art, convert it
 to SuperFW's compact `.sfcov` format, and install it with the exact filename the
 firmware expects.
 
-SuperCover is in early development. Phases 1 and 2 provide the safe ROM scanner,
-matching engine, and curated Libretro artwork provider. It downloads validated
-artwork into a local cache but does not convert or install covers yet.
+SuperCover is in early development. Phases 1-3 provide the safe ROM scanner,
+matching engine, curated Libretro artwork provider, and hardware-compatible
+`.sfcov` exporter. The user always chooses where exported files go.
 
 ## Safety principles
 
@@ -59,6 +59,41 @@ Use `--cache-dir` to select another cache folder and `--refresh-artwork` to
 refresh both the provider index and matched images. Fuzzy, conflicting, and
 unmatched games are never downloaded automatically.
 
+## Export hardware-ready covers
+
+Supply `--export-dir` to choose the exact folder that receives `.sfcov` files.
+There is deliberately no default export location:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m supercover "D:\GBA Games" `
+  --catalog catalog.json `
+  --export-dir "C:\My SuperCover Export"
+```
+
+To install directly to a mounted SuperCard SD, select its canonical cover
+folder yourself:
+
+```powershell
+python -m supercover "D:\GBA Games" `
+  --catalog catalog.json `
+  --export-dir "E:\.superfw\covers"
+```
+
+The drive letters above are examples only. SuperCover never guesses which
+drive is an SD card.
+
+Use `--preview-dir` to choose a separate folder for 72-by-72 PNG previews using
+the final GBA colors. Existing covers are preserved by default. The available
+policies are `--existing skip`, `--existing replace`, and
+`--existing keep-both`. A Keep Both filename is useful for comparison but does
+not automatically match the ROM in SuperFW until the user renames it.
+
+Exports retain the ROM's exact basename and add only `.sfcov`. A hidden
+`.supercover-export.json` manifest records the ROM identity, artwork source,
+conversion settings, and final cover checksum. See
+[the export guide](docs/EXPORTING.md) for the safety rules and examples.
+
 The current catalog format is intentionally simple:
 
 ```json
@@ -80,7 +115,7 @@ The complete six-phase plan is in [GAME_PLAN.md](GAME_PLAN.md):
 
 1. Offline scanner and matcher
 2. Curated online artwork provider
-3. `.sfcov` conversion and SD-card installation
+3. `.sfcov` conversion and user-selected export
 4. Windows graphical interface
 5. Portable executable packaging
 6. Library and SuperCard SD hardware verification
@@ -102,3 +137,6 @@ not redistribute a cover pack.
 
 SuperCover is free software licensed under the GNU General Public License,
 version 3 or later. See [LICENSE](LICENSE).
+
+Third-party components and adapted code are documented in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -11,9 +11,14 @@ import sys
 
 from . import (
     ArtworkError,
+    ExistingFilePolicy,
+    ExportError,
+    ExportRequest,
+    ExportStatus,
     LibretroProvider,
     MatchStatus,
     NetworkError,
+    export_covers,
     load_catalog,
     match_roms,
     scan_roms,
@@ -50,10 +55,38 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="refresh the Libretro index and cached images",
     )
+    parser.add_argument(
+        "--export-dir",
+        type=Path,
+        help="user-selected folder that will receive .sfcov files",
+    )
+    parser.add_argument(
+        "--preview-dir",
+        type=Path,
+        help="optional user-selected folder for final GBA-color PNG previews",
+    )
+    parser.add_argument(
+        "--existing",
+        choices=tuple(policy.value for policy in ExistingFilePolicy),
+        default=ExistingFilePolicy.SKIP.value,
+        help="existing cover policy: skip, replace, or keep-both (default: skip)",
+    )
+    parser.add_argument(
+        "--resize-mode",
+        choices=("cover", "contain"),
+        default="cover",
+        help="crop to fill or letterbox the 72x72 cover (default: cover)",
+    )
+    parser.add_argument(
+        "--dither",
+        choices=("floyd-steinberg", "none"),
+        default="floyd-steinberg",
+        help="color-reduction mode (default: floyd-steinberg)",
+    )
     return parser
 
 
-def _result_to_dict(result, artwork=None):
+def _result_to_dict(result, artwork=None, export=None):
     payload = {
         "rom": {
             **asdict(result.rom),
@@ -69,14 +102,19 @@ def _result_to_dict(result, artwork=None):
     }
     if artwork is not None:
         payload["artwork"] = artwork
+    if export is not None:
+        payload["export"] = export
     return payload
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.fetch_artwork and args.catalog is None:
-        parser.error("--fetch-artwork requires --catalog")
+    fetch_artwork = args.fetch_artwork or args.export_dir is not None
+    if fetch_artwork and args.catalog is None:
+        parser.error("artwork fetching and export require --catalog")
+    if args.preview_dir is not None and args.export_dir is None:
+        parser.error("--preview-dir requires --export-dir")
 
     try:
         roms = scan_roms(args.rom_folder, recursive=not args.no_recursive)
@@ -86,8 +124,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     artwork_reports = {}
+    artwork_downloads = {}
     artwork_failures = 0
-    if args.fetch_artwork and results is not None:
+    if fetch_artwork and results is not None:
         provider = LibretroProvider(args.cache_dir, offline=args.offline)
         refresh_index = args.refresh_artwork
         for result in results:
@@ -116,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
                     "width": artwork.width,
                     "height": artwork.height,
                 }
+                artwork_downloads[key] = artwork
             except (ArtworkError, NetworkError, OSError) as exc:
                 artwork_failures += 1
                 artwork_reports[key] = {
@@ -123,10 +163,62 @@ def main(argv: list[str] | None = None) -> int:
                     "message": str(exc),
                 }
 
+    export_reports = {}
+    export_failures = 0
+    if args.export_dir is not None and results is not None:
+        requests = [
+            ExportRequest(result, artwork_downloads[result.rom.path])
+            for result in results
+            if result.rom.path in artwork_downloads
+        ]
+        try:
+            exported = export_covers(
+                requests,
+                args.export_dir,
+                preview_dir=args.preview_dir,
+                existing=args.existing,
+                mode=args.resize_mode,
+                dither=args.dither,
+            )
+            for item in exported:
+                exact_firmware_name = (
+                    item.path.name
+                    == f"{item.request.match.rom.stem}.sfcov"
+                )
+                export_reports[item.request.match.rom.path] = {
+                    "status": item.status.value,
+                    "path": str(item.path),
+                    "preview_path": (
+                        str(item.preview_path) if item.preview_path else None
+                    ),
+                    "palette_colors": item.palette_colors,
+                    "file_size": item.file_size,
+                    "exact_firmware_name": exact_firmware_name,
+                    "message": item.message,
+                }
+        except (ExportError, OSError, ValueError) as exc:
+            export_failures = max(1, len(requests))
+            for request in requests:
+                export_reports[request.match.rom.path] = {
+                    "status": "error",
+                    "message": str(exc),
+                }
+
+        for result in results:
+            if result.rom.path not in export_reports:
+                export_reports[result.rom.path] = {
+                    "status": "skipped",
+                    "message": "No validated automatic artwork match was available.",
+                }
+
     if args.json:
         payload = (
             [
-                _result_to_dict(result, artwork_reports.get(result.rom.path))
+                _result_to_dict(
+                    result,
+                    artwork_reports.get(result.rom.path),
+                    export_reports.get(result.rom.path),
+                )
                 for result in results
             ]
             if results is not None
@@ -140,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
             ]
         )
         print(json.dumps(payload, indent=2))
-        return 0
+        return 2 if artwork_failures or export_failures else 0
 
     print(f"SuperCover found {len(roms)} GBA ROM(s).")
     if results is None:
@@ -160,7 +252,21 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 else:
                     print(f"    Artwork {artwork['status']}: {artwork['message']}")
-    return 2 if artwork_failures else 0
+            export = export_reports.get(result.rom.path)
+            if export:
+                if export["status"] in (
+                    ExportStatus.EXPORTED.value,
+                    ExportStatus.SKIPPED.value,
+                ) and "path" in export:
+                    print(f"    Export {export['status']}: {export['path']}")
+                    if not export.get("exact_firmware_name", True):
+                        print(
+                            "    Warning: this numbered comparison filename will not "
+                            "automatically match the ROM in SuperFW."
+                        )
+                else:
+                    print(f"    Export {export['status']}: {export['message']}")
+    return 2 if artwork_failures or export_failures else 0
 
 
 if __name__ == "__main__":

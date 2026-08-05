@@ -11,6 +11,7 @@ dist/
 catalog.json
 cache/
 .supercover-cache/
+.supercover-phase3-smoke/
 downloads/
 output/
 *.sfcov
