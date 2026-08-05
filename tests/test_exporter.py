@@ -26,7 +26,7 @@ from supercover import (  # noqa: E402
     export_covers,
 )
 from supercover.exporter import MANIFEST_FILENAME  # noqa: E402
-from supercover.sfcov import HEIGHT, MAX_PALETTE_COLORS, WIDTH  # noqa: E402
+from supercover.sfcov import HEIGHT, LEGACY_SIZE, MAX_PALETTE_COLORS, WIDTH  # noqa: E402
 
 
 class ExporterTest(unittest.TestCase):
@@ -111,7 +111,7 @@ class ExporterTest(unittest.TestCase):
             self.assertEqual(record["artwork_provider"], "Libretro GBA Thumbnails")
             self.assertEqual(record["artwork_source_url"], request.artwork.candidate.url)
             self.assertEqual(record["format_version"], 2)
-            self.assertEqual((record["width"], record["height"]), (72, 72))
+            self.assertEqual((record["width"], record["height"]), (77, 77))
             self.assertEqual(
                 record["cover_sha256"],
                 hashlib.sha256(result.path.read_bytes()).hexdigest().upper(),
@@ -138,6 +138,23 @@ class ExporterTest(unittest.TestCase):
                     preview.convert("RGB").tobytes(),
                     cover_to_image(Cover.read(result.path)).tobytes(),
                 )
+
+    def test_legacy_72_pixel_export_is_available(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            request = self.make_request(root)
+
+            result = export_covers(
+                [request],
+                root / "exports",
+                preview_dir=root / "previews",
+                size=LEGACY_SIZE,
+            )[0]
+
+            cover = Cover.read(result.path)
+            self.assertEqual((cover.width, cover.height), (72, 72))
+            with Image.open(result.preview_path) as preview:
+                self.assertEqual(preview.size, (72, 72))
 
     def test_skip_policy_preserves_existing_cover_byte_for_byte(self):
         with tempfile.TemporaryDirectory() as temp_dir:

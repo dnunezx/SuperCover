@@ -12,6 +12,7 @@ from supercover.sfcov import (  # noqa: E402
     HEADER,
     HEADER_SIZE,
     HEIGHT,
+    LEGACY_SIZE,
     MAX_PALETTE_COLORS,
     PALETTE_BASE,
     PIXEL_COUNT,
@@ -32,15 +33,25 @@ class SuperFwCoverFormatTest(unittest.TestCase):
         )
         return image_to_cover(image)
 
-    def test_fixed_format_round_trip(self):
+    def test_default_format_round_trip_uses_77_pixels(self):
         cover = self.make_cover()
         encoded = cover.to_bytes()
         decoded = Cover.from_bytes(encoded)
 
         self.assertEqual(decoded, cover)
+        self.assertEqual((WIDTH, HEIGHT), (77, 77))
         self.assertEqual((decoded.width, decoded.height), (WIDTH, HEIGHT))
         self.assertEqual(len(decoded.pixels), PIXEL_COUNT)
         self.assertEqual(len(encoded), HEADER_SIZE + len(cover.palette) * 2 + PIXEL_COUNT)
+
+    def test_legacy_72_pixel_format_round_trip(self):
+        image = Image.new("RGB", (96, 144), (40, 120, 210))
+        cover = image_to_cover(image, size=LEGACY_SIZE)
+
+        decoded = Cover.from_bytes(cover.to_bytes())
+
+        self.assertEqual((decoded.width, decoded.height), (72, 72))
+        self.assertEqual(len(decoded.pixels), 72 * 72)
 
     def test_crc_corruption_is_rejected(self):
         encoded = bytearray(self.make_cover().to_bytes())
@@ -60,7 +71,7 @@ class SuperFwCoverFormatTest(unittest.TestCase):
         fields = list(HEADER.unpack_from(encoded))
         fields[4] = WIDTH + 1
         encoded[:HEADER_SIZE] = HEADER.pack(*fields)
-        with self.assertRaisesRegex(CoverFormatError, "exactly"):
+        with self.assertRaisesRegex(CoverFormatError, "one of"):
             Cover.from_bytes(bytes(encoded))
 
     def test_trailing_bytes_are_rejected(self):

@@ -145,6 +145,7 @@ class DesktopWorkflowTest(unittest.TestCase):
             self.assertEqual(summary.skipped, 1)
             self.assertEqual(provider.requested, ["Metal Slug Advance (USA)"])
             self.assertTrue(session.games[0].preview_png.startswith(b"\x89PNG"))
+            self.assertEqual(session.games[0].preview_size, 77)
             self.assertIsNone(session.games[1].artwork)
             self.assertEqual(len(session.export_requests()), 1)
 

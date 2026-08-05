@@ -119,8 +119,10 @@ python -m supercover "D:\GBA Games" `
 The drive letters above are examples only. SuperCover never guesses which
 drive is an SD card.
 
-Use `--preview-dir` to choose a separate folder for 72-by-72 PNG previews using
-the final GBA colors. Existing covers are preserved by default. The available
+Exports are 77-by-77 by default. Use `--export-size 72` when you need the
+legacy 72-by-72 format. `--preview-dir` chooses a separate folder for PNG
+previews at the selected export size using the final GBA colors. Existing
+covers are preserved by default. The available
 policies are `--existing skip`, `--existing replace`, and
 `--existing keep-both`. A Keep Both filename is useful for comparison but does
 not automatically match the ROM in SuperFW until the user renames it.

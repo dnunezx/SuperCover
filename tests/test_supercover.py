@@ -235,6 +235,8 @@ class SuperCoverTest(unittest.TestCase):
                             str(selected),
                             "--preview-dir",
                             str(previews),
+                            "--export-size",
+                            "72",
                             "--json",
                         ]
                     )
@@ -242,7 +244,8 @@ class SuperCoverTest(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             cover_path = selected / Path(rom_name).with_suffix(".sfcov").name
             preview_path = previews / Path(rom_name).with_suffix(".png").name
-            Cover.read(cover_path)
+            cover = Cover.read(cover_path)
+            self.assertEqual((cover.width, cover.height), (72, 72))
             self.assertTrue(preview_path.is_file())
             report = json.loads(output.getvalue())[0]
             self.assertEqual(report["export"]["path"], str(cover_path.resolve()))

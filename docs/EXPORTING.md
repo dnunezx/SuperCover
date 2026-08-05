@@ -52,15 +52,17 @@ SuperFW until it is deliberately renamed.
 
 ## Conversion modes
 
-The default `--resize-mode cover` center-crops the source as needed to fill the
-72-by-72 square. `--resize-mode contain` preserves the entire source and adds
-black letterboxing where necessary.
+The default export size is 77-by-77. Pass `--export-size 72` for a legacy
+72-by-72 cover. The default `--resize-mode cover` center-crops the source as
+needed to fill the selected square. `--resize-mode contain` preserves the
+entire source and adds black letterboxing where necessary.
 
 The default `--dither floyd-steinberg` generally preserves gradients.
 `--dither none` can look cleaner for flat illustrations and logos.
 
-An optional `--preview-dir` writes a 72-by-72 PNG rendered from the encoded
-cover's final 15-bit GBA colors. The preview folder is also selected explicitly.
+An optional `--preview-dir` writes a PNG at the selected export size, rendered
+from the encoded cover's final 15-bit GBA colors. The preview folder is also
+selected explicitly.
 
 ## Safety and manifest
 

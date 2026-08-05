@@ -1,7 +1,7 @@
 """Read and write the version 2 SuperFW cover format.
 
-Derived from SuperFW's GPL-licensed ``tools/sfcov.py`` and kept byte-compatible
-with the format accepted by the physical-hardware-tested firmware.
+Derived from SuperFW's GPL-licensed ``tools/sfcov.py``. The header carries the
+dimensions, allowing both the current 77-pixel size and legacy 72-pixel covers.
 """
 
 from __future__ import annotations
@@ -15,9 +15,11 @@ import zlib
 MAGIC = b"SFCV"
 VERSION = 2
 HEADER_SIZE = 32
-WIDTH = 72
-HEIGHT = 72
+WIDTH = 77
+HEIGHT = 77
 PIXEL_COUNT = WIDTH * HEIGHT
+LEGACY_SIZE = 72
+SUPPORTED_SIZES = (WIDTH, LEGACY_SIZE)
 PALETTE_BASE = 20
 MAX_PALETTE_COLORS = 220
 MAX_PIXEL_INDEX = PALETTE_BASE + MAX_PALETTE_COLORS - 1
@@ -61,23 +63,28 @@ class Cover:
 
     palette: tuple[int, ...]
     pixels: bytes
+    size: int = WIDTH
 
     @property
     def width(self) -> int:
-        return WIDTH
+        return self.size
 
     @property
     def height(self) -> int:
-        return HEIGHT
+        return self.size
 
     def validate(self) -> None:
+        if self.size not in SUPPORTED_SIZES:
+            supported = ", ".join(f"{size}x{size}" for size in SUPPORTED_SIZES)
+            raise CoverFormatError(f"cover dimensions must be one of: {supported}")
         if not 1 <= len(self.palette) <= MAX_PALETTE_COLORS:
             raise CoverFormatError(
                 f"palette must contain 1..{MAX_PALETTE_COLORS} colors"
             )
-        if len(self.pixels) != PIXEL_COUNT:
+        pixel_count = self.width * self.height
+        if len(self.pixels) != pixel_count:
             raise CoverFormatError(
-                f"pixel payload must contain exactly {PIXEL_COUNT} bytes"
+                f"pixel payload must contain exactly {pixel_count} bytes"
             )
         if any(not 0 <= color <= 0x7FFF for color in self.palette):
             raise CoverFormatError("palette colors must be 15-bit BGR555 values")
@@ -99,8 +106,8 @@ class Cover:
             VERSION,
             HEADER_SIZE,
             0,
-            WIDTH,
-            HEIGHT,
+            self.width,
+            self.height,
             len(self.palette),
             PALETTE_BASE,
             0,
@@ -140,9 +147,10 @@ class Cover:
             raise CoverFormatError("unsupported cover header size")
         if flags != 0 or reserved_byte != 0 or reserved_word != 0:
             raise CoverFormatError("unsupported flags or non-zero reserved fields")
-        if width != WIDTH or height != HEIGHT:
+        if width != height or width not in SUPPORTED_SIZES:
+            supported = ", ".join(f"{size}x{size}" for size in SUPPORTED_SIZES)
             raise CoverFormatError(
-                f"version {VERSION} covers must be exactly {WIDTH}x{HEIGHT}"
+                f"version {VERSION} covers must be one of: {supported}"
             )
         if palette_base != PALETTE_BASE:
             raise CoverFormatError(
@@ -152,7 +160,7 @@ class Cover:
             raise CoverFormatError("palette count is out of range")
         if palette_bytes != palette_count * 2:
             raise CoverFormatError("palette byte length does not match its count")
-        if pixel_bytes != PIXEL_COUNT:
+        if pixel_bytes != width * height:
             raise CoverFormatError("pixel byte length is invalid")
 
         expected_size = HEADER_SIZE + palette_bytes + pixel_bytes
@@ -171,7 +179,7 @@ class Cover:
             f"<{palette_count}H", data[HEADER_SIZE:palette_end]
         )
         pixels = data[palette_end:]
-        cover = cls(tuple(palette), pixels)
+        cover = cls(tuple(palette), pixels, width)
         cover.validate()
         return cover
 

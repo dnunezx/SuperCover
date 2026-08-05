@@ -13,9 +13,9 @@ from PIL import Image, ImageOps
 
 from .sfcov import (
     Cover,
-    HEIGHT,
     MAX_PALETTE_COLORS,
     PALETTE_BASE,
+    SUPPORTED_SIZES,
     WIDTH,
     bgr555_to_rgb888,
     rgb888_to_bgr555,
@@ -34,13 +34,16 @@ def prepare_image(
     image: Image.Image,
     mode: str = "cover",
     background: tuple[int, int, int] = (0, 0, 0),
+    size: int = WIDTH,
 ) -> Image.Image:
-    """Flatten and resize an input image to the fixed 72-by-72 canvas."""
+    """Flatten and resize an input image to a supported square canvas."""
 
     if mode not in RESIZE_MODES:
         raise ValueError(f"unsupported resize mode: {mode}")
     if len(background) != 3 or any(not 0 <= channel <= 255 for channel in background):
         raise ValueError("background must contain three channels from 0 to 255")
+    if size not in SUPPORTED_SIZES:
+        raise ValueError(f"unsupported export size: {size}")
 
     rgba = image.convert("RGBA")
     flattened = Image.new("RGBA", rgba.size, background + (255,))
@@ -48,11 +51,11 @@ def prepare_image(
     rgb = flattened.convert("RGB")
 
     if mode == "cover":
-        return ImageOps.fit(rgb, (WIDTH, HEIGHT), method=RESAMPLE)
+        return ImageOps.fit(rgb, (size, size), method=RESAMPLE)
 
-    contained = ImageOps.contain(rgb, (WIDTH, HEIGHT), method=RESAMPLE)
-    canvas = Image.new("RGB", (WIDTH, HEIGHT), background)
-    offset = ((WIDTH - contained.width) // 2, (HEIGHT - contained.height) // 2)
+    contained = ImageOps.contain(rgb, (size, size), method=RESAMPLE)
+    canvas = Image.new("RGB", (size, size), background)
+    offset = ((size - contained.width) // 2, (size - contained.height) // 2)
     canvas.paste(contained, offset)
     return canvas
 
@@ -63,13 +66,14 @@ def image_to_cover(
     mode: str = "cover",
     background: tuple[int, int, int] = (0, 0, 0),
     dither: str = "floyd-steinberg",
+    size: int = WIDTH,
 ) -> Cover:
     """Prepare, quantize, compact, and encode an image as a Cover."""
 
     if dither not in DITHER_MODES:
         raise ValueError(f"unsupported dither mode: {dither}")
 
-    prepared = prepare_image(image, mode=mode, background=background)
+    prepared = prepare_image(image, mode=mode, background=background, size=size)
     quantized = prepared.quantize(
         colors=MAX_PALETTE_COLORS,
         method=Image.Quantize.MEDIANCUT,
@@ -98,7 +102,7 @@ def image_to_cover(
         PALETTE_BASE + source_to_compact[source_index]
         for source_index in source_pixels
     )
-    return Cover(tuple(compact_palette), pixels)
+    return Cover(tuple(compact_palette), pixels, size)
 
 
 def image_file_to_cover(
@@ -107,6 +111,7 @@ def image_file_to_cover(
     mode: str = "cover",
     background: tuple[int, int, int] = (0, 0, 0),
     dither: str = "floyd-steinberg",
+    size: int = WIDTH,
 ) -> Cover:
     """Decode one local image and return a validated in-memory cover."""
 
@@ -115,6 +120,7 @@ def image_file_to_cover(
         mode=mode,
         background=background,
         dither=dither,
+        size=size,
     )
 
 
@@ -124,6 +130,7 @@ def image_bytes_to_cover(
     mode: str = "cover",
     background: tuple[int, int, int] = (0, 0, 0),
     dither: str = "floyd-steinberg",
+    size: int = WIDTH,
 ) -> Cover:
     """Decode validated in-memory image bytes without a filesystem race."""
 
@@ -135,6 +142,7 @@ def image_bytes_to_cover(
                 mode=mode,
                 background=background,
                 dither=dither,
+                size=size,
             )
     except (OSError, Image.DecompressionBombError) as exc:
         raise ValueError("image cannot be decoded safely") from exc
@@ -150,7 +158,7 @@ def cover_to_image(cover: Cover) -> Image.Image:
     palette.extend([0] * (768 - len(palette)))
 
     relative_pixels = bytes(pixel - PALETTE_BASE for pixel in cover.pixels)
-    preview = Image.new("P", (WIDTH, HEIGHT))
+    preview = Image.new("P", (cover.width, cover.height))
     preview.putpalette(palette)
     preview.putdata(relative_pixels)
     return preview.convert("RGB")
