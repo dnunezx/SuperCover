@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Read-only GBA ROM discovery and hashing."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Curated Libretro Game Boy Advance box-art provider."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Small atomic-file helpers shared by SuperCover components."""
 
 from __future__ import annotations

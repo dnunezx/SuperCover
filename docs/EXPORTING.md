@@ -1,7 +1,10 @@
-# Exporting SuperFW Covers
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
 
-Phase 3 converts validated artwork into the version 2 `.sfcov` format used by
-the cover-art-enabled SuperFW firmware.
+# Exporting SuperR7 Covers
+
+SuperCover converts validated artwork into the versioned `.sfcov` formats used
+by SuperR7. Version 3 is the production SuperR7 format; version 2 is retained
+only for legacy upstream SuperFW compatibility.
 
 ## The user chooses the destination
 
@@ -25,7 +28,7 @@ The correct drive letter depends on the user's computer.
 
 ## Exact filenames
 
-SuperFW looks up covers by the ROM basename:
+SuperR7 looks up covers by the ROM basename:
 
 ```text
 Metal Slug Advance (USA).gba
@@ -48,14 +51,15 @@ temporary file in the selected directory, and atomically replaces the old file.
 `--existing keep-both` leaves the original untouched and creates a numbered
 filename such as `Game (1).sfcov`. This is useful for comparing conversions,
 but the numbered file is not the exact ROM match and will not be selected by
-SuperFW until it is deliberately renamed.
+SuperR7 until it is deliberately renamed.
 
 ## Conversion modes
 
-The default export size is 77-by-77. Pass `--export-size 72` for a legacy
-72-by-72 cover. The default `--resize-mode cover` center-crops the source as
-needed to fill the selected square. `--resize-mode contain` preserves the
-entire source and adds black letterboxing where necessary.
+The default export is version 3 at 76-by-76 for SuperR7. Pass
+`--export-size 72` only for a legacy version 2 cover for upstream SuperFW. The
+default `--resize-mode cover` center-crops the source as needed to fill the
+selected square. `--resize-mode contain` preserves the entire source and adds
+black letterboxing where necessary.
 
 The default `--dither floyd-steinberg` generally preserves gradients.
 `--dither none` can look cleaner for flat illustrations and logos.

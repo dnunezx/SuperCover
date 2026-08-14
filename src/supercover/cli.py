@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Command-line test interface for the SuperCover engine."""
 
 from __future__ import annotations
@@ -23,13 +24,13 @@ from . import (
     match_roms,
     scan_roms,
 )
-from .sfcov import LEGACY_SIZE, WIDTH
+from .sfcov import LEGACY_SIZE, LEGACY_VERSION, VERSION, WIDTH
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="SuperCover",
-        description="Safely inventory GBA ROMs and match them to a local catalog",
+        description="Prepare safe, firmware-ready GBA cover art for SuperR7",
     )
     parser.add_argument("rom_folder", type=Path, help="folder containing GBA ROMs")
     parser.add_argument("--catalog", type=Path, help="Phase 1 JSON game catalog")
@@ -77,7 +78,10 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         choices=(WIDTH, LEGACY_SIZE),
         default=WIDTH,
-        help=f"square cover size in pixels (default: {WIDTH})",
+        help=(
+            f"cover format: {WIDTH} selects v{VERSION} (default); "
+            f"{LEGACY_SIZE} selects legacy v{LEGACY_VERSION}"
+        ),
     )
     parser.add_argument(
         "--resize-mode",
@@ -271,7 +275,7 @@ def main(argv: list[str] | None = None) -> int:
                     if not export.get("exact_firmware_name", True):
                         print(
                             "    Warning: this numbered comparison filename will not "
-                            "automatically match the ROM in SuperFW."
+                            "automatically match the ROM in SuperR7."
                         )
                 else:
                     print(f"    Export {export['status']}: {export['message']}")

@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Offline scanning and matching engine for SuperCover."""
 
 from .artwork import (

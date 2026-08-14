@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Windows desktop interface for SuperCover."""
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from .libretro import LibretroProvider
 from .matching import match_roms
 from .network import DownloadCancelled, HttpClient
 from .scanner import scan_roms
-from .sfcov import LEGACY_SIZE, WIDTH
+from .sfcov import LEGACY_SIZE, LEGACY_VERSION, VERSION, WIDTH
 from .version import __version__
 from .workflow import (
     CoverSession,
@@ -37,8 +38,8 @@ POLICY_LABELS = {
 }
 
 EXPORT_SIZE_LABELS = {
-    f"{WIDTH} x {WIDTH} (default)": WIDTH,
-    f"{LEGACY_SIZE} x {LEGACY_SIZE}": LEGACY_SIZE,
+    f"{WIDTH} x {WIDTH} (format v{VERSION}, default)": WIDTH,
+    f"{LEGACY_SIZE} x {LEGACY_SIZE} (format v{LEGACY_VERSION}, legacy)": LEGACY_SIZE,
 }
 
 
@@ -121,7 +122,7 @@ class SuperCoverApp:
         ttk.Label(header, text="SuperCover", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             header,
-            text="Find and prepare SuperFW cover art without changing your games.",
+            text="Built for SuperR7: prepare cover art without changing your games.",
             style="Subtitle.TLabel",
         ).pack(anchor="w")
 
@@ -347,7 +348,8 @@ class SuperCoverApp:
         messagebox.showinfo(
             "About SuperCover",
             f"SuperCover {__version__}\n\n"
-            "Portable GBA cover-art manager for SuperFW.\n\n"
+            "Portable GBA cover-art manager built for SuperR7.\n\n"
+            "Copyright (C) 2026 Danny Nunez (dnunezx).\n\n"
             "Licensed under GPL-3.0-or-later. Online artwork metadata comes "
             "from the curated Libretro GBA thumbnail project.\n\n"
             "See LICENSE and THIRD_PARTY_NOTICES in the release folder for details.\n\n"

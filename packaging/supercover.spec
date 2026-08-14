@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 
 from pathlib import Path
 

@@ -1,14 +1,23 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # SuperCover Game Plan
 
 ## Goal
 
-SuperCover will be a portable Windows application that turns a folder of GBA
-ROMs into a ready-to-use SuperFW cover library. It will identify each game,
-find appropriate box art from a curated online source, convert the image to
-SuperFW's `.sfcov` format, and place it under `/.superfw/covers/` using the
+SuperCover is a portable Windows application built for SuperR7 that turns a
+folder of GBA ROMs into a ready-to-use cover library. It identifies each game,
+finds appropriate box art from a curated online source, converts the image to
+SuperR7's `.sfcov` format, and places it under `/.superfw/covers/` using the
 ROM's exact filename.
 
 SuperCover will never modify, rename, upload, or delete ROM files.
+
+## Current format checkpoint
+
+SuperCover 0.6.0 exports strict 76-by-76 version 3 covers by default for
+SuperR7. The optional 72-by-72 setting exports strict version 2 covers for
+legacy upstream SuperFW compatibility. The former experimental 77-by-77
+version 2 output is no longer offered or accepted.
 
 ## Intended user experience
 
@@ -82,7 +91,8 @@ Acceptance criteria:
 
 ### Phase 3: Conversion and installation
 
-- Reuse SuperFW's tested 72-by-72 `.sfcov` converter.
+- Use SuperR7's production 76-by-76 version 3 `.sfcov` format by default.
+- Retain the upstream SuperFW 72-by-72 version 2 format as a legacy option.
 - Preview the final GBA colors.
 - Name output files after the exact original ROM basename.
 - Install to `/.superfw/covers/` using temporary files and atomic replacement.
@@ -185,16 +195,17 @@ end-to-end command report. A live smoke test found and validated:
 - `Legend of Zelda, The - The Minish Cap (USA).png` at 512 by 512 pixels.
 
 Both images were then loaded successfully in strict offline mode from the local
-cache. Phase 3 will crop or resize these source shapes into SuperFW's required
-72-by-72 square `.sfcov` format.
+cache. Phase 3 then added the conversion path needed to turn these source
+shapes into firmware-ready `.sfcov` artwork.
 
 ## Phase 3 result
 
-Phase 3 integrated SuperFW's proven version 2 `.sfcov` format and conversion
-logic. Pillow performs desktop image decoding, resizing, and quantization;
-SuperCover produces a fixed 72-by-72 indexed image with at most 220 GBA BGR555
-colors, absolute palette indices 20-239, exact length validation, and a CRC-32
-protected payload.
+Phase 3 originally integrated SuperFW's proven version 2 `.sfcov` format and
+conversion logic. SuperCover 0.6.0 extends that implementation with SuperR7's
+production version 3 format as the default: a fixed 76-by-76 indexed image with
+at most 220 GBA BGR555 colors, absolute palette indices 20-239, exact length
+validation, and a CRC-32-protected payload. The 72-by-72 version 2 format
+remains available only as a legacy compatibility option.
 
 Export has no default destination. The command-line harness requires the user
 to supply `--export-dir`, and the desktop GUI exposes the same decision as a
@@ -205,7 +216,7 @@ colors.
 
 Output filenames retain the exact ROM basename and change only `.gba` to
 `.sfcov`. Case-insensitive duplicate basenames are rejected before conversion
-because SuperFW uses one flat cover directory. Existing-file policies are Skip
+because SuperR7 uses one flat cover directory. Existing-file policies are Skip
 (default), Replace, and Keep Both. Skip preserves the existing bytes; Replace
 uses atomic replacement; Keep Both chooses a numbered comparison filename and
 reports that it will not automatically match the ROM in firmware.
@@ -258,9 +269,10 @@ conversion, and export run on a background worker. Network cancellation and
 per-game artwork errors are visible without hiding covers that prepared
 successfully.
 
-Prepared games show their exact final 72-by-72 GBA-color preview. Existing-cover
-policy, offline mode, recursive scanning, and optional preview PNGs are all
-available without a terminal. Fifty-one offline tests cover Phases 1-4,
+Prepared games show their exact final GBA-color preview at the selected export
+size. Existing-cover policy, offline mode, recursive scanning, and optional
+preview PNGs are all available without a terminal. Fifty-one offline tests
+cover Phases 1-4,
 including the new review defaults, manual corrections, trusted/provider catalog
 merging, selected-only preparation, final-color previews, and isolated download
 failures. A Windows smoke test also verified the real 1180-by-780 window, blank
@@ -268,7 +280,7 @@ initial destination, disabled Export button, and enabled Scan button.
 
 ## Phase 5 result
 
-Phase 5 packages SuperCover 0.5.0 as a single windowed Windows 10/11 x64
+Phase 5 packages SuperCover 0.6.0 as a single windowed Windows 10/11 x64
 executable with PyInstaller 6.21.0. The build is pinned, reproducible, uses no
 UPX compression, and embeds Python, Pillow, Tkinter/Tcl/Tk, the application
 code, legal notices, a multi-resolution application icon, and Windows version
@@ -283,15 +295,16 @@ license, Libretro artwork source, notices, and project repository.
 
 The clean Windows GitHub Actions build installs the application and pinned
 freezer, runs the complete offline test suite, creates `SuperCover.exe`, runs a
-self-test inside the frozen process, checks the embedded `0.5.0.0` product
+self-test inside the frozen process, checks the embedded `0.6.0.0` product
 version, packages the executable with its license, notices, and README, and
-uploads `SuperCover-0.5.0-windows-x64.zip` as the workflow artifact.
+uploads `SuperCover-0.6.0-windows-x64.zip` as the workflow artifact.
 
 The frozen self-test validates embedded Python, Tkinter 8.6, Pillow, and the
-72-by-72 `.sfcov` conversion path. The local one-file build was approximately
-30 MB in a development environment and passed with `frozen: true`, a valid
-5,218-byte test cover, and the expected Windows file and product metadata.
-Fifty-six source tests now cover Phases 1-5. The release remains intentionally
+default SuperR7 76-by-76 version 3 `.sfcov` conversion path. The local one-file
+build is approximately 30 MB in a development environment and passes with
+`frozen: true`, a valid test cover, and the expected Windows file and product
+metadata.
+Fifty-nine source tests now cover Phases 1-5. The release remains intentionally
 unsigned, so the documentation explains that Windows may show an unfamiliar-app
 warning and directs users to the verified repository workflow artifact.
 
@@ -299,5 +312,5 @@ warning and directs users to the verified repository workflow artifact.
 
 SuperCover will distribute code and conversion support, not a copyrighted cover
 pack. Artwork remains attributable to its provider and original rights holders.
-The project will retain the licenses and notices required by SuperFW and any
-reused components.
+The project will retain the licenses and notices required by the upstream
+SuperFW portions and any other reused components.

@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Frozen-application entry point and portable build self-test."""
 
 from __future__ import annotations

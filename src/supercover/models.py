@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Data shared by the SuperCover scanner and matching engine."""
 
 from __future__ import annotations

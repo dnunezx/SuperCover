@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Conservative offline matching for SuperCover."""
 
 from __future__ import annotations

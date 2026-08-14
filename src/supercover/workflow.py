@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """State and background operations shared by the SuperCover desktop app."""
 
 from __future__ import annotations

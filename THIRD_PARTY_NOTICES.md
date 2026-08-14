@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # Third-Party Notices
 
 ## SuperFW cover format and converter
