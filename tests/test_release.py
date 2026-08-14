@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 import json
 from pathlib import Path
 import tempfile
@@ -28,10 +29,17 @@ class PortableReleaseTest(unittest.TestCase):
             PROJECT_ROOT / "packaging" / "windows-version.txt"
         ).read_text(encoding="utf-8")
 
-        self.assertEqual(__version__, "0.5.0")
+        self.assertEqual(__version__, "0.6.0")
         self.assertEqual(project["project"]["version"], __version__)
-        self.assertIn("ProductVersion', u'0.5.0.0'", version_resource)
-        self.assertIn("filevers=(0, 5, 0, 0)", version_resource)
+        self.assertEqual(
+            project["project"]["authors"],
+            [{"name": "Danny Nunez (dnunezx)"}],
+        )
+        self.assertIn("for SuperR7", project["project"]["description"])
+        self.assertIn("ProductVersion', u'0.6.0.0'", version_resource)
+        self.assertIn("filevers=(0, 6, 0, 0)", version_resource)
+        self.assertIn("artwork manager for SuperR7", version_resource)
+        self.assertIn("Danny Nunez (dnunezx)", version_resource)
 
     def test_source_self_test_validates_tk_and_cover_conversion(self):
         with tempfile.TemporaryDirectory() as temp_dir:

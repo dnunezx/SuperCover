@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # Libretro Artwork Provider
 
 SuperCover uses the curated

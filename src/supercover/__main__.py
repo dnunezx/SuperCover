@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Open the desktop app by default, retaining the command-line test harness."""
 
 import sys

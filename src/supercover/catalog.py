@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Loading and validation for SuperCover's small Phase 1 JSON catalog."""
 
 from __future__ import annotations

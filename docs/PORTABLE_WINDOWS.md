@@ -1,13 +1,16 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # Portable Windows release
 
-SuperCover 0.5.0 is packaged as a single Windows 10/11 x64 executable. It does
-not need an installer, Python, administrator rights, or registry changes.
+SuperCover 0.6.0 is built for SuperR7 and packaged as a single Windows 10/11
+x64 executable. It does not need an installer, Python, administrator rights,
+or registry changes.
 
 ## Download and run
 
 1. Open the repository's **Actions** page.
 2. Open a successful **Build portable Windows app** run.
-3. Download `SuperCover-0.5.0-windows-x64.zip` from its Artifacts section.
+3. Download `SuperCover-0.6.0-windows-x64.zip` from its Artifacts section.
 4. Extract the ZIP to a normal folder or removable drive.
 5. Double-click `SuperCover.exe`.
 

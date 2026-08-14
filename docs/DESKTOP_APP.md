@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # SuperCover desktop app
 
 Phase 4 adds a Windows interface around the same tested scanner, matcher,
@@ -22,8 +24,8 @@ Phase 5 will replace this development command with a portable `.exe`.
 3. Optionally choose a trusted SuperCover JSON catalog for checksum matching.
    Without one, the app safely matches against titles in Libretro's curated GBA
    box-art list.
-4. Leave **Export size** at the default 77 x 77, or choose 72 x 72 for legacy
-   compatibility.
+4. Leave **Export size** at the default 76 x 76 (format v3), or choose 72 x 72
+   (format v2) only for legacy upstream SuperFW compatibility.
 5. Select **Scan and Match Games**.
 6. Review the table before downloading anything:
    - Automatic exact-name or checksum matches start included.
@@ -42,7 +44,7 @@ Phase 5 will replace this development command with a portable `.exe`.
 - **Preserve existing covers** is the default and leaves their bytes unchanged.
 - **Replace existing covers** atomically replaces them with the prepared files.
 - **Keep both (comparison only)** adds numbered filenames. Those comparison
-  names will not automatically match the ROM in SuperFW.
+  names will not automatically match the ROM in SuperR7.
 
 Optional preview PNGs are placed in `SuperCover Previews` inside the selected
 export folder. The firmware `.sfcov` files remain directly in the exact folder

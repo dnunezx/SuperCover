@@ -1,7 +1,9 @@
-"""Read and write the version 2 SuperFW cover format.
+# Copyright (C) 2026 Danny Nunez (dnunezx)
+"""Read and write SuperR7 and legacy SuperFW cover formats.
 
-Derived from SuperFW's GPL-licensed ``tools/sfcov.py``. The header carries the
-dimensions, allowing both the current 77-pixel size and legacy 72-pixel covers.
+The production SuperR7 format is version 3 at 76 pixels. Legacy upstream
+SuperFW compatibility uses version 2 at 72 pixels. The implementation is
+derived from SuperFW's GPL-licensed ``tools/sfcov.py``.
 """
 
 from __future__ import annotations
@@ -13,13 +15,18 @@ import zlib
 
 
 MAGIC = b"SFCV"
-VERSION = 2
+VERSION = 3
 HEADER_SIZE = 32
-WIDTH = 77
-HEIGHT = 77
+WIDTH = 76
+HEIGHT = 76
 PIXEL_COUNT = WIDTH * HEIGHT
+LEGACY_VERSION = 2
 LEGACY_SIZE = 72
 SUPPORTED_SIZES = (WIDTH, LEGACY_SIZE)
+FORMAT_VERSION_BY_SIZE = {
+    WIDTH: VERSION,
+    LEGACY_SIZE: LEGACY_VERSION,
+}
 PALETTE_BASE = 20
 MAX_PALETTE_COLORS = 220
 MAX_PIXEL_INDEX = PALETTE_BASE + MAX_PALETTE_COLORS - 1
@@ -29,7 +36,7 @@ assert HEADER.size == HEADER_SIZE
 
 
 class CoverFormatError(ValueError):
-    """Raised when a cover does not conform to the version 2 format."""
+    """Raised when a cover does not conform to a supported format."""
 
 
 def rgb888_to_bgr555(red: int, green: int, blue: int) -> int:
@@ -73,6 +80,10 @@ class Cover:
     def height(self) -> int:
         return self.size
 
+    @property
+    def version(self) -> int:
+        return FORMAT_VERSION_BY_SIZE[self.size]
+
     def validate(self) -> None:
         if self.size not in SUPPORTED_SIZES:
             supported = ", ".join(f"{size}x{size}" for size in SUPPORTED_SIZES)
@@ -103,7 +114,7 @@ class Cover:
         checksum = zlib.crc32(payload) & 0xFFFFFFFF
         header = HEADER.pack(
             MAGIC,
-            VERSION,
+            self.version,
             HEADER_SIZE,
             0,
             self.width,
@@ -141,20 +152,24 @@ class Cover:
 
         if magic != MAGIC:
             raise CoverFormatError("invalid cover magic")
-        if version != VERSION:
+        if version not in FORMAT_VERSION_BY_SIZE.values():
             raise CoverFormatError(f"unsupported cover version {version}")
         if header_size != HEADER_SIZE:
             raise CoverFormatError("unsupported cover header size")
         if flags != 0 or reserved_byte != 0 or reserved_word != 0:
             raise CoverFormatError("unsupported flags or non-zero reserved fields")
-        if width != height or width not in SUPPORTED_SIZES:
-            supported = ", ".join(f"{size}x{size}" for size in SUPPORTED_SIZES)
+        expected_version = FORMAT_VERSION_BY_SIZE.get(width)
+        if width != height or expected_version is None or version != expected_version:
+            supported = ", ".join(
+                f"version {format_version} at {size}x{size}"
+                for size, format_version in FORMAT_VERSION_BY_SIZE.items()
+            )
             raise CoverFormatError(
-                f"version {VERSION} covers must be one of: {supported}"
+                f"cover version and dimensions must match one of: {supported}"
             )
         if palette_base != PALETTE_BASE:
             raise CoverFormatError(
-                f"version {VERSION} palette base must be {PALETTE_BASE}"
+                f"version {version} palette base must be {PALETTE_BASE}"
             )
         if not 1 <= palette_count <= MAX_PALETTE_COLORS:
             raise CoverFormatError("palette count is out of range")

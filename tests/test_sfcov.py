@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 import sys
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from supercover.sfcov import (  # noqa: E402
     HEADER_SIZE,
     HEIGHT,
     LEGACY_SIZE,
+    LEGACY_VERSION,
     MAX_PALETTE_COLORS,
     PALETTE_BASE,
     PIXEL_COUNT,
@@ -21,7 +23,7 @@ from supercover.sfcov import (  # noqa: E402
 )
 
 
-class SuperFwCoverFormatTest(unittest.TestCase):
+class SuperR7CoverFormatTest(unittest.TestCase):
     def make_cover(self):
         image = Image.new("RGB", (96, 144))
         image.putdata(
@@ -33,13 +35,15 @@ class SuperFwCoverFormatTest(unittest.TestCase):
         )
         return image_to_cover(image)
 
-    def test_default_format_round_trip_uses_77_pixels(self):
+    def test_default_format_round_trip_uses_v3_76_pixels(self):
         cover = self.make_cover()
         encoded = cover.to_bytes()
         decoded = Cover.from_bytes(encoded)
 
         self.assertEqual(decoded, cover)
-        self.assertEqual((WIDTH, HEIGHT), (77, 77))
+        self.assertEqual(VERSION, 3)
+        self.assertEqual((WIDTH, HEIGHT), (76, 76))
+        self.assertEqual(decoded.version, VERSION)
         self.assertEqual((decoded.width, decoded.height), (WIDTH, HEIGHT))
         self.assertEqual(len(decoded.pixels), PIXEL_COUNT)
         self.assertEqual(len(encoded), HEADER_SIZE + len(cover.palette) * 2 + PIXEL_COUNT)
@@ -51,7 +55,26 @@ class SuperFwCoverFormatTest(unittest.TestCase):
         decoded = Cover.from_bytes(cover.to_bytes())
 
         self.assertEqual((decoded.width, decoded.height), (72, 72))
+        self.assertEqual(decoded.version, LEGACY_VERSION)
         self.assertEqual(len(decoded.pixels), 72 * 72)
+
+    def test_format_version_must_match_dimensions(self):
+        encoded = bytearray(self.make_cover().to_bytes())
+        fields = list(HEADER.unpack_from(encoded))
+        fields[1] = LEGACY_VERSION
+        encoded[:HEADER_SIZE] = HEADER.pack(*fields)
+        with self.assertRaisesRegex(CoverFormatError, "version and dimensions"):
+            Cover.from_bytes(bytes(encoded))
+
+        legacy = bytearray(
+            image_to_cover(Image.new("RGB", (10, 10), "blue"), size=LEGACY_SIZE)
+            .to_bytes()
+        )
+        fields = list(HEADER.unpack_from(legacy))
+        fields[1] = VERSION
+        legacy[:HEADER_SIZE] = HEADER.pack(*fields)
+        with self.assertRaisesRegex(CoverFormatError, "version and dimensions"):
+            Cover.from_bytes(bytes(legacy))
 
     def test_crc_corruption_is_rejected(self):
         encoded = bytearray(self.make_cover().to_bytes())
@@ -71,7 +94,7 @@ class SuperFwCoverFormatTest(unittest.TestCase):
         fields = list(HEADER.unpack_from(encoded))
         fields[4] = WIDTH + 1
         encoded[:HEADER_SIZE] = HEADER.pack(*fields)
-        with self.assertRaisesRegex(CoverFormatError, "one of"):
+        with self.assertRaisesRegex(CoverFormatError, "version and dimensions"):
             Cover.from_bytes(bytes(encoded))
 
     def test_trailing_bytes_are_rejected(self):

@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Artwork records and strict image validation shared by providers."""
 
 from __future__ import annotations

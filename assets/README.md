@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # SuperCover application icon
 
 `supercover-icon.png` is the transparent master artwork and `supercover.ico`

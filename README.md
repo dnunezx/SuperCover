@@ -1,9 +1,11 @@
+<!-- Copyright (C) 2026 Danny Nunez (dnunezx) -->
+
 # SuperCover
 
-SuperCover is a portable Windows companion for
-[SuperFW](https://github.com/davidgfnet/superfw). Its goal is to scan a folder
-of Game Boy Advance ROMs, identify each game, find curated box art, convert it
-to SuperFW's compact `.sfcov` format, and install it with the exact filename the
+SuperCover is the portable Windows cover-art companion built for
+[SuperR7](https://github.com/dnunezx/SuperR7). It scans a folder of Game Boy
+Advance ROMs, identifies each game, finds curated box art, converts it to
+SuperR7's compact `.sfcov` format, and installs it with the exact filename the
 firmware expects.
 
 SuperCover is in early development. Phases 1-5 provide the safe ROM scanner,
@@ -23,7 +25,7 @@ executable. The user always chooses where exported files go.
 ## Portable Windows app
 
 Every successful **Build portable Windows app** workflow run provides
-`SuperCover-0.5.0-windows-x64.zip`. Download and extract that archive, then
+`SuperCover-0.6.0-windows-x64.zip`. Download and extract that archive, then
 double-click `SuperCover.exe`. It needs no installer, Python installation,
 administrator rights, or registry changes. See the
 [portable Windows guide](docs/PORTABLE_WINDOWS.md).
@@ -119,13 +121,14 @@ python -m supercover "D:\GBA Games" `
 The drive letters above are examples only. SuperCover never guesses which
 drive is an SD card.
 
-Exports are 77-by-77 by default. Use `--export-size 72` when you need the
-legacy 72-by-72 format. `--preview-dir` chooses a separate folder for PNG
+Exports are version 3 at 76-by-76 by default. Use `--export-size 72` when you
+need the legacy version 2 format for upstream SuperFW. `--preview-dir`
+chooses a separate folder for PNG
 previews at the selected export size using the final GBA colors. Existing
 covers are preserved by default. The available
 policies are `--existing skip`, `--existing replace`, and
 `--existing keep-both`. A Keep Both filename is useful for comparison but does
-not automatically match the ROM in SuperFW until the user renames it.
+not automatically match the ROM in SuperR7 until the user renames it.
 
 Exports retain the ROM's exact basename and add only `.sfcov`. A hidden
 `.supercover-export.json` manifest records the ROM identity, artwork source,
@@ -158,10 +161,13 @@ The complete six-phase plan is in [GAME_PLAN.md](GAME_PLAN.md):
 5. Portable executable packaging
 6. Library and SuperCard SD hardware verification
 
-## Relationship to SuperFW
+## Relationship to SuperR7 and SuperFW
 
-SuperCover is an independent companion project. It is not an official part of
-SuperFW and does not include SuperFW firmware or copyrighted game artwork.
+SuperCover is built and maintained specifically for SuperR7. It is distributed
+as a separate companion application and does not bundle SuperR7 firmware or
+copyrighted game artwork. Its legacy version 2 compatibility and portions of
+its conversion logic retain attribution to the upstream
+[SuperFW](https://github.com/davidgfnet/superfw) project.
 
 ## Artwork provider
 
@@ -172,6 +178,8 @@ exact source URL, and source filename for every successful download. It does
 not redistribute a cover pack.
 
 ## License
+
+Original SuperCover work is Copyright (C) 2026 Danny Nunez (dnunezx).
 
 SuperCover is free software licensed under the GNU General Public License,
 version 3 or later. See [LICENSE](LICENSE).

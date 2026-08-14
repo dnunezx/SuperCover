@@ -1,7 +1,9 @@
-"""Convert common desktop images into hardware-ready SuperFW covers.
+# Copyright (C) 2026 Danny Nunez (dnunezx)
+"""Convert common desktop images into hardware-ready SuperR7 covers.
 
-The palette and quantization logic is derived from SuperFW's GPL-licensed,
-physical-hardware-tested cover converter.
+The production path follows SuperR7's version 3 format. Palette and
+quantization logic is derived from SuperFW's GPL-licensed,
+physical-hardware-tested converter.
 """
 
 from __future__ import annotations

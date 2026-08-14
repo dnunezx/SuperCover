@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 """Small retrying HTTP client with bounded reads and cancellation."""
 
 from __future__ import annotations

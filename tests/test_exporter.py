@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 import hashlib
 import json
 import sys
@@ -26,7 +27,14 @@ from supercover import (  # noqa: E402
     export_covers,
 )
 from supercover.exporter import MANIFEST_FILENAME  # noqa: E402
-from supercover.sfcov import HEIGHT, LEGACY_SIZE, MAX_PALETTE_COLORS, WIDTH  # noqa: E402
+from supercover.sfcov import (  # noqa: E402
+    HEIGHT,
+    LEGACY_SIZE,
+    LEGACY_VERSION,
+    MAX_PALETTE_COLORS,
+    VERSION,
+    WIDTH,
+)
 
 
 class ExporterTest(unittest.TestCase):
@@ -110,8 +118,8 @@ class ExporterTest(unittest.TestCase):
             self.assertEqual(record["rom_filename"], request.match.rom.filename)
             self.assertEqual(record["artwork_provider"], "Libretro GBA Thumbnails")
             self.assertEqual(record["artwork_source_url"], request.artwork.candidate.url)
-            self.assertEqual(record["format_version"], 2)
-            self.assertEqual((record["width"], record["height"]), (77, 77))
+            self.assertEqual(record["format_version"], VERSION)
+            self.assertEqual((record["width"], record["height"]), (76, 76))
             self.assertEqual(
                 record["cover_sha256"],
                 hashlib.sha256(result.path.read_bytes()).hexdigest().upper(),
@@ -153,6 +161,14 @@ class ExporterTest(unittest.TestCase):
 
             cover = Cover.read(result.path)
             self.assertEqual((cover.width, cover.height), (72, 72))
+            self.assertEqual(cover.version, LEGACY_VERSION)
+            manifest = json.loads(
+                (root / "exports" / MANIFEST_FILENAME).read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                manifest["exports"][result.path.name]["format_version"],
+                LEGACY_VERSION,
+            )
             with Image.open(result.preview_path) as preview:
                 self.assertEqual(preview.size, (72, 72))
 

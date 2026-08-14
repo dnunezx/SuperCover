@@ -1,4 +1,5 @@
-"""Safe user-selected export of matched artwork as SuperFW cover files."""
+# Copyright (C) 2026 Danny Nunez (dnunezx)
+"""Safe user-selected export of matched artwork as SuperR7 cover files."""
 
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ from typing import Iterable
 from .artwork import ArtworkDownload, InvalidArtwork, validate_png
 from .converter import cover_to_image, image_bytes_to_cover
 from .models import MatchResult, MatchStatus
-from .sfcov import Cover, VERSION, WIDTH
+from .sfcov import Cover, WIDTH
 from .storage import write_atomic
 
 
@@ -274,7 +275,7 @@ def export_covers(
             "source_width": artwork.width,
             "source_height": artwork.height,
             "cover_sha256": hashlib.sha256(encoded).hexdigest().upper(),
-            "format_version": VERSION,
+            "format_version": cover.version,
             "width": cover.width,
             "height": cover.height,
             "palette_colors": len(cover.palette),
@@ -287,7 +288,7 @@ def export_covers(
             "Cover exported successfully."
             if exact_name
             else "Cover exported with a numbered comparison filename; it will not "
-            "automatically match the ROM in SuperFW."
+            "automatically match the ROM in SuperR7."
         )
         results.append(
             ExportResult(

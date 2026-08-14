@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Danny Nunez (dnunezx)
 param(
     [string]$OutputDirectory = ""
 )
