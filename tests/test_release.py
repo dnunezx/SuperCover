@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from supercover.gui import bundled_resource  # noqa: E402
 from supercover.release import main as release_main, run_self_test  # noqa: E402
-from supercover.version import __version__  # noqa: E402
+from supercover.version import __display_version__, __version__  # noqa: E402
 from supercover.sfcov import HEIGHT, WIDTH  # noqa: E402
 
 
@@ -29,15 +29,16 @@ class PortableReleaseTest(unittest.TestCase):
             PROJECT_ROOT / "packaging" / "windows-version.txt"
         ).read_text(encoding="utf-8")
 
-        self.assertEqual(__version__, "0.6.0")
+        self.assertEqual(__version__, "0.6.0rc2")
+        self.assertEqual(__display_version__, "0.6.0-rc.2")
         self.assertEqual(project["project"]["version"], __version__)
         self.assertEqual(
             project["project"]["authors"],
             [{"name": "Danny Nunez (dnunezx)"}],
         )
         self.assertIn("for SuperR7", project["project"]["description"])
-        self.assertIn("ProductVersion', u'0.6.0.0'", version_resource)
-        self.assertIn("filevers=(0, 6, 0, 0)", version_resource)
+        self.assertIn("ProductVersion', u'0.6.0-rc.2'", version_resource)
+        self.assertIn("filevers=(0, 6, 0, 2)", version_resource)
         self.assertIn("artwork manager for SuperR7", version_resource)
         self.assertIn("Danny Nunez (dnunezx)", version_resource)
 

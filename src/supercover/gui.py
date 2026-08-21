@@ -21,7 +21,7 @@ from .matching import match_roms
 from .network import DownloadCancelled, HttpClient
 from .scanner import scan_roms
 from .sfcov import LEGACY_SIZE, LEGACY_VERSION, VERSION, WIDTH
-from .version import __version__
+from .version import __display_version__
 from .workflow import (
     CoverSession,
     artwork_preview_bytes,
@@ -41,6 +41,86 @@ EXPORT_SIZE_LABELS = {
     f"{WIDTH} x {WIDTH} (format v{VERSION}, default)": WIDTH,
     f"{LEGACY_SIZE} x {LEGACY_SIZE} (format v{LEGACY_VERSION}, legacy)": LEGACY_SIZE,
 }
+
+
+DARK_THEME = {
+    "background": "#090E14",
+    "surface": "#101821",
+    "surface_alt": "#172330",
+    "surface_hover": "#213247",
+    "border": "#2A3B4D",
+    "text": "#EDF3F8",
+    "muted": "#9AA9B8",
+    "disabled": "#647383",
+    "blue": "#58A6FF",
+    "blue_dark": "#1E4E7A",
+    "gold": "#F2C14E",
+    "gold_hover": "#FFD36A",
+    "gold_text": "#17130A",
+    "ready": "#173629",
+    "ready_text": "#A7E7C2",
+    "attention": "#3A301B",
+    "attention_text": "#FFE08A",
+    "error": "#3A2028",
+    "error_text": "#FFB4C2",
+}
+
+
+def _enable_windows_dark_titlebar(root: tk.Tk) -> None:
+    """Ask supported Windows versions to render the native title bar dark."""
+
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        root.update_idletasks()
+        enabled = ctypes.c_int(1)
+        get_parent = ctypes.windll.user32.GetParent
+        get_parent.argtypes = [wintypes.HWND]
+        get_parent.restype = wintypes.HWND
+        window = get_parent(root.winfo_id()) or root.winfo_id()
+        for attribute in (20, 19):
+            result = ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                window,
+                attribute,
+                ctypes.byref(enabled),
+                ctypes.sizeof(enabled),
+            )
+            if result == 0:
+                break
+
+        def colorref(hex_color: str) -> ctypes.c_uint:
+            red, green, blue = (
+                int(hex_color[offset : offset + 2], 16) for offset in (1, 3, 5)
+            )
+            return ctypes.c_uint(red | (green << 8) | (blue << 16))
+
+        for attribute, color in (
+            (34, DARK_THEME["border"]),
+            (35, DARK_THEME["background"]),
+            (36, DARK_THEME["text"]),
+        ):
+            value = colorref(color)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                window,
+                attribute,
+                ctypes.byref(value),
+                ctypes.sizeof(value),
+            )
+        ctypes.windll.user32.SetWindowPos(
+            window,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0x0001 | 0x0002 | 0x0004 | 0x0020,
+        )
+    except (AttributeError, OSError, tk.TclError):
+        # Older Windows builds and non-DWM sessions simply retain their native bar.
+        return
 
 
 def application_dir() -> Path:
@@ -63,7 +143,7 @@ class SuperCoverApp:
 
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title(f"SuperCover {__version__}")
+        self.root.title(f"SuperCover {__display_version__}")
         try:
             self.root.iconbitmap(
                 default=str(bundled_resource("assets", "supercover.ico"))
@@ -95,30 +175,281 @@ class SuperCoverApp:
 
         self._configure_styles()
         self._build_interface()
+        self.root.after_idle(lambda: _enable_windows_dark_titlebar(self.root))
+        self.root.after(200, lambda: _enable_windows_dark_titlebar(self.root))
         self.export_folder.trace_add("write", self._export_folder_changed)
         self.export_size.trace_add("write", self._export_size_changed)
         self._set_action_states()
 
     def _configure_styles(self) -> None:
+        colors = DARK_THEME
+        self.root.configure(background=colors["background"])
+        self.root.option_add("*TCombobox*Listbox.background", colors["surface_alt"])
+        self.root.option_add("*TCombobox*Listbox.foreground", colors["text"])
+        self.root.option_add("*TCombobox*Listbox.selectBackground", colors["blue_dark"])
+        self.root.option_add("*TCombobox*Listbox.selectForeground", colors["text"])
+
         style = ttk.Style(self.root)
-        for theme in ("vista", "xpnative", "clam"):
-            if theme in style.theme_names():
-                style.theme_use(theme)
-                break
-        style.configure("Title.TLabel", font=("Segoe UI", 20, "bold"))
-        style.configure("Subtitle.TLabel", font=("Segoe UI", 10))
-        style.configure("Section.TLabelframe.Label", font=("Segoe UI", 10, "bold"))
-        style.configure("Primary.TButton", font=("Segoe UI", 10, "bold"), padding=(14, 8))
-        style.configure("Treeview", rowheight=28, font=("Segoe UI", 9))
-        style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        style.configure(
+            ".",
+            background=colors["background"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            darkcolor=colors["border"],
+            lightcolor=colors["border"],
+            troughcolor=colors["surface_alt"],
+            selectbackground=colors["blue_dark"],
+            selectforeground=colors["text"],
+            font=("Segoe UI", 9),
+        )
+        style.configure("App.TFrame", background=colors["background"])
+        style.configure("Panel.TFrame", background=colors["surface"])
+        style.configure(
+            "Header.TFrame",
+            background=colors["surface"],
+            bordercolor=colors["border"],
+            relief="solid",
+            borderwidth=1,
+        )
+        style.configure(
+            "HeaderKicker.TLabel",
+            background=colors["surface"],
+            foreground=colors["blue"],
+            font=("Segoe UI Semibold", 8),
+        )
+        style.configure(
+            "Title.TLabel",
+            background=colors["surface"],
+            foreground=colors["gold"],
+            font=("Segoe UI Semibold", 21),
+        )
+        style.configure(
+            "Subtitle.TLabel",
+            background=colors["surface"],
+            foreground=colors["muted"],
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "Version.TLabel",
+            background=colors["blue_dark"],
+            foreground=colors["text"],
+            font=("Segoe UI Semibold", 9),
+            padding=(10, 5),
+        )
+        style.configure(
+            "Section.TLabelframe",
+            background=colors["surface"],
+            bordercolor=colors["border"],
+            lightcolor=colors["border"],
+            darkcolor=colors["border"],
+            relief="solid",
+            borderwidth=1,
+        )
+        style.configure(
+            "Section.TLabelframe.Label",
+            background=colors["surface"],
+            foreground=colors["gold"],
+            font=("Segoe UI Semibold", 10),
+        )
+        style.configure(
+            "Panel.TLabel",
+            background=colors["surface"],
+            foreground=colors["text"],
+        )
+        style.configure(
+            "PanelMuted.TLabel",
+            background=colors["surface"],
+            foreground=colors["muted"],
+        )
+        style.configure(
+            "SelectedTitle.TLabel",
+            background=colors["surface"],
+            foreground=colors["text"],
+            font=("Segoe UI Semibold", 11),
+        )
+        style.configure(
+            "Preview.TLabel",
+            background=colors["surface_alt"],
+            foreground=colors["muted"],
+            bordercolor=colors["border"],
+            lightcolor=colors["border"],
+            darkcolor=colors["border"],
+            relief="solid",
+        )
+        style.configure(
+            "TButton",
+            background=colors["surface_alt"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            focuscolor=colors["blue"],
+            padding=(10, 6),
+        )
+        style.map(
+            "TButton",
+            background=[
+                ("pressed", colors["blue_dark"]),
+                ("active", colors["surface_hover"]),
+                ("disabled", colors["surface"]),
+            ],
+            foreground=[("disabled", colors["disabled"])],
+            bordercolor=[("focus", colors["blue"]), ("active", colors["blue"])],
+        )
+        style.configure(
+            "Primary.TButton",
+            background=colors["gold"],
+            foreground=colors["gold_text"],
+            bordercolor=colors["gold"],
+            focuscolor=colors["blue"],
+            font=("Segoe UI Semibold", 10),
+            padding=(15, 8),
+        )
+        style.map(
+            "Primary.TButton",
+            background=[
+                ("pressed", colors["gold"]),
+                ("active", colors["gold_hover"]),
+                ("disabled", colors["surface"]),
+            ],
+            foreground=[("disabled", colors["disabled"])],
+            bordercolor=[("focus", colors["blue"]), ("active", colors["gold_hover"])],
+        )
+        style.configure(
+            "TEntry",
+            fieldbackground=colors["surface_alt"],
+            foreground=colors["text"],
+            insertcolor=colors["text"],
+            bordercolor=colors["border"],
+            padding=6,
+        )
+        style.map(
+            "TEntry",
+            bordercolor=[("focus", colors["blue"])],
+            lightcolor=[("focus", colors["blue"])],
+            darkcolor=[("focus", colors["blue"])],
+        )
+        style.configure(
+            "TCombobox",
+            fieldbackground=colors["surface_alt"],
+            background=colors["surface_alt"],
+            foreground=colors["text"],
+            arrowcolor=colors["blue"],
+            bordercolor=colors["border"],
+            padding=5,
+        )
+        style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", colors["surface_alt"])],
+            foreground=[("readonly", colors["text"])],
+            bordercolor=[("focus", colors["blue"])],
+            arrowcolor=[("active", colors["gold"])],
+        )
+        style.configure(
+            "TCheckbutton",
+            background=colors["surface"],
+            foreground=colors["text"],
+            focuscolor=colors["blue"],
+            indicatorbackground=colors["surface_alt"],
+            indicatorforeground=colors["gold_text"],
+            bordercolor=colors["border"],
+        )
+        style.map(
+            "TCheckbutton",
+            background=[("active", colors["surface"])],
+            foreground=[("disabled", colors["disabled"])],
+            indicatorbackground=[
+                ("selected", colors["blue"]),
+                ("active", colors["surface_hover"]),
+                ("!selected", colors["surface_alt"]),
+            ],
+            indicatorcolor=[
+                ("selected", colors["blue"]),
+                ("!selected", colors["surface_alt"]),
+            ],
+        )
+        style.configure(
+            "Treeview",
+            background=colors["surface_alt"],
+            fieldbackground=colors["surface_alt"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            rowheight=29,
+            font=("Segoe UI", 9),
+        )
+        style.map(
+            "Treeview",
+            background=[("selected", colors["blue_dark"])],
+            foreground=[("selected", colors["text"])],
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=colors["surface"],
+            foreground=colors["muted"],
+            bordercolor=colors["border"],
+            relief="flat",
+            font=("Segoe UI Semibold", 9),
+            padding=(6, 7),
+        )
+        style.map(
+            "Treeview.Heading",
+            background=[("active", colors["surface_hover"])],
+            foreground=[("active", colors["text"])],
+        )
+        style.configure(
+            "Vertical.TScrollbar",
+            background=colors["surface_alt"],
+            troughcolor=colors["surface"],
+            bordercolor=colors["surface"],
+            arrowcolor=colors["muted"],
+        )
+        style.map(
+            "Vertical.TScrollbar",
+            background=[("active", colors["surface_hover"])],
+            arrowcolor=[("active", colors["text"])],
+        )
+        style.configure(
+            "Horizontal.TProgressbar",
+            background=colors["blue"],
+            troughcolor=colors["surface_alt"],
+            bordercolor=colors["border"],
+            lightcolor=colors["blue"],
+            darkcolor=colors["blue"],
+        )
+        style.configure(
+            "Status.TFrame",
+            background=colors["surface"],
+            bordercolor=colors["border"],
+            relief="solid",
+            borderwidth=1,
+        )
+        style.configure(
+            "Status.TLabel",
+            background=colors["surface"],
+            foreground=colors["muted"],
+            font=("Segoe UI", 9),
+        )
 
     def _build_interface(self) -> None:
-        outer = ttk.Frame(self.root, padding=16)
+        outer = ttk.Frame(self.root, padding=16, style="App.TFrame")
         outer.pack(fill="both", expand=True)
 
-        header = ttk.Frame(outer)
+        header = ttk.Frame(outer, style="Header.TFrame", padding=(18, 14))
         header.pack(fill="x", pady=(0, 12))
-        ttk.Button(header, text="About", command=self._show_about).pack(side="right")
+        header_actions = ttk.Frame(header, style="Panel.TFrame")
+        header_actions.pack(side="right", padx=(16, 0))
+        ttk.Label(
+            header_actions,
+            text=__display_version__.upper(),
+            style="Version.TLabel",
+        ).pack(anchor="e", pady=(0, 7))
+        ttk.Button(header_actions, text="About", command=self._show_about).pack(anchor="e")
+        ttk.Label(
+            header,
+            text="SUPERR7 COVER LIBRARY UTILITY",
+            style="HeaderKicker.TLabel",
+        ).pack(anchor="w")
         ttk.Label(header, text="SuperCover", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             header,
@@ -154,7 +485,7 @@ class SuperCoverApp:
                 "Nothing is exported until you choose this folder. For direct SD-card "
                 "installation, choose its .superfw\\covers folder."
             ),
-            foreground="#555555",
+            style="PanelMuted.TLabel",
         ).grid(row=2, column=1, columnspan=2, sticky="w", pady=(0, 5))
         self._path_row(
             setup,
@@ -167,10 +498,10 @@ class SuperCoverApp:
         ttk.Label(
             setup,
             text="Without a JSON catalog, SuperCover uses the curated online cover list.",
-            foreground="#555555",
+            style="PanelMuted.TLabel",
         ).grid(row=4, column=1, columnspan=2, sticky="w", pady=(0, 4))
 
-        options = ttk.Frame(setup)
+        options = ttk.Frame(setup, style="Panel.TFrame")
         options.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(4, 0))
         ttk.Checkbutton(
             options, text="Include subfolders", variable=self.recursive
@@ -184,9 +515,13 @@ class SuperCoverApp:
             variable=self.save_previews,
         ).pack(side="left", padx=(18, 0))
 
-        export_options = ttk.Frame(setup)
+        export_options = ttk.Frame(setup, style="Panel.TFrame")
         export_options.grid(row=6, column=1, columnspan=2, sticky="w", pady=(6, 0))
-        ttk.Label(export_options, text="Existing covers:").pack(side="left", padx=(0, 5))
+        ttk.Label(
+            export_options,
+            text="Existing covers:",
+            style="Panel.TLabel",
+        ).pack(side="left", padx=(0, 5))
         ttk.Combobox(
             export_options,
             textvariable=self.existing_policy,
@@ -194,16 +529,20 @@ class SuperCoverApp:
             state="readonly",
             width=27,
         ).pack(side="left")
-        ttk.Label(export_options, text="Export size:").pack(side="left", padx=(18, 5))
+        ttk.Label(
+            export_options,
+            text="Export size:",
+            style="Panel.TLabel",
+        ).pack(side="left", padx=(18, 5))
         ttk.Combobox(
             export_options,
             textvariable=self.export_size,
             values=tuple(EXPORT_SIZE_LABELS),
             state="readonly",
-            width=17,
+            width=30,
         ).pack(side="left")
 
-        actions = ttk.Frame(outer)
+        actions = ttk.Frame(outer, style="App.TFrame")
         actions.pack(fill="x", pady=10)
         self.scan_button = ttk.Button(
             actions,
@@ -245,8 +584,12 @@ class SuperCoverApp:
         content.add(games_frame, weight=4)
         content.add(review_frame, weight=2)
 
-        ttk.Label(games_frame, textvariable=self.summary_text).pack(anchor="w", pady=(0, 6))
-        table_frame = ttk.Frame(games_frame)
+        ttk.Label(
+            games_frame,
+            textvariable=self.summary_text,
+            style="PanelMuted.TLabel",
+        ).pack(anchor="w", pady=(0, 6))
+        table_frame = ttk.Frame(games_frame, style="Panel.TFrame")
         table_frame.pack(fill="both", expand=True)
         columns = ("include", "status", "rom", "match", "artwork")
         self.games_table = ttk.Treeview(
@@ -276,23 +619,39 @@ class SuperCoverApp:
         scrollbar.pack(side="right", fill="y")
         self.games_table.bind("<<TreeviewSelect>>", self._show_selected_game)
         self.games_table.bind("<Double-1>", self._toggle_selected)
-        self.games_table.tag_configure("attention", background="#fff4d6")
-        self.games_table.tag_configure("error", background="#ffe2e2")
-        self.games_table.tag_configure("ready", background="#e7f6e7")
+        self.games_table.tag_configure(
+            "attention",
+            background=DARK_THEME["attention"],
+            foreground=DARK_THEME["attention_text"],
+        )
+        self.games_table.tag_configure(
+            "error",
+            background=DARK_THEME["error"],
+            foreground=DARK_THEME["error_text"],
+        )
+        self.games_table.tag_configure(
+            "ready",
+            background=DARK_THEME["ready"],
+            foreground=DARK_THEME["ready_text"],
+        )
 
         self.selected_rom_label = ttk.Label(
             review_frame,
             text="Select a game from the list.",
-            font=("Segoe UI", 11, "bold"),
+            style="SelectedTitle.TLabel",
             wraplength=330,
         )
         self.selected_rom_label.pack(fill="x", anchor="w")
         self.selected_message = ttk.Label(
-            review_frame, text="", wraplength=330, foreground="#555555"
+            review_frame, text="", wraplength=330, style="PanelMuted.TLabel"
         )
         self.selected_message.pack(fill="x", anchor="w", pady=(4, 12))
 
-        ttk.Label(review_frame, text="Artwork title:").pack(anchor="w")
+        ttk.Label(
+            review_frame,
+            text="Artwork title:",
+            style="Panel.TLabel",
+        ).pack(anchor="w")
         self.title_box = ttk.Combobox(
             review_frame, textvariable=self.review_title, state="normal"
         )
@@ -317,12 +676,17 @@ class SuperCoverApp:
             justify="center",
             relief="solid",
             padding=8,
+            style="Preview.TLabel",
         )
         self.preview_label.pack(fill="both", expand=True)
 
-        status = ttk.Frame(outer)
+        status = ttk.Frame(outer, style="Status.TFrame", padding=(10, 7))
         status.pack(fill="x", pady=(10, 0))
-        ttk.Label(status, textvariable=self.status_text).pack(side="left", fill="x", expand=True)
+        ttk.Label(
+            status,
+            textvariable=self.status_text,
+            style="Status.TLabel",
+        ).pack(side="left", fill="x", expand=True)
 
     def _path_row(
         self,
@@ -333,7 +697,13 @@ class SuperCoverApp:
         button_text: str,
         command: Callable,
     ) -> None:
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=3)
+        ttk.Label(parent, text=label, style="Panel.TLabel").grid(
+            row=row,
+            column=0,
+            sticky="w",
+            padx=(0, 8),
+            pady=3,
+        )
         ttk.Entry(parent, textvariable=variable).grid(row=row, column=1, sticky="ew", pady=3)
         ttk.Button(parent, text=button_text, command=command).grid(
             row=row, column=2, sticky="ew", padx=(8, 0), pady=3
@@ -347,7 +717,7 @@ class SuperCoverApp:
     def _show_about(self) -> None:
         messagebox.showinfo(
             "About SuperCover",
-            f"SuperCover {__version__}\n\n"
+            f"SuperCover {__display_version__}\n\n"
             "Portable GBA cover-art manager built for SuperR7.\n\n"
             "Copyright (C) 2026 Danny Nunez (dnunezx).\n\n"
             "Licensed under GPL-3.0-or-later. Online artwork metadata comes "

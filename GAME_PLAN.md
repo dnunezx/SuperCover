@@ -278,9 +278,15 @@ merging, selected-only preparation, final-color previews, and isolated download
 failures. A Windows smoke test also verified the real 1180-by-780 window, blank
 initial destination, disabled Export button, and enabled Scan button.
 
+The 0.6.0-rc.2 interface replaces the native light styling with a deliberate
+dark blue-and-gold theme. It applies consistent dark surfaces to folder fields,
+review tables, controls, progress, previews, and status areas; retains textual
+state labels alongside color; and requests a native dark Windows title bar when
+the operating system supports it.
+
 ## Phase 5 result
 
-Phase 5 packages SuperCover 0.6.0 as a single windowed Windows 10/11 x64
+Phase 5 packages SuperCover 0.6.0-rc.2 as a single windowed Windows 10/11 x64
 executable with PyInstaller 6.21.0. The build is pinned, reproducible, uses no
 UPX compression, and embeds Python, Pillow, Tkinter/Tcl/Tk, the application
 code, legal notices, a multi-resolution application icon, and Windows version
@@ -295,9 +301,9 @@ license, Libretro artwork source, notices, and project repository.
 
 The clean Windows GitHub Actions build installs the application and pinned
 freezer, runs the complete offline test suite, creates `SuperCover.exe`, runs a
-self-test inside the frozen process, checks the embedded `0.6.0.0` product
+self-test inside the frozen process, checks the embedded `0.6.0-rc.2` product
 version, packages the executable with its license, notices, and README, and
-uploads `SuperCover-0.6.0-windows-x64.zip` as the workflow artifact.
+uploads `SuperCover-0.6.0-rc.2-windows-x64.zip` as the workflow artifact.
 
 The frozen self-test validates embedded Python, Tkinter 8.6, Pillow, and the
 default SuperR7 76-by-76 version 3 `.sfcov` conversion path. The local one-file
