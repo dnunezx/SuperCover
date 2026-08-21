@@ -2,6 +2,11 @@
 
 # SuperCover desktop app
 
+SuperCover 0.6.0-rc.2 uses a dark blue-and-gold interface with high-contrast
+review states. Gold identifies primary actions, blue identifies focus and
+progress, and distinct dark green, amber, and red rows identify ready, review,
+and failed artwork without relying on color alone.
+
 Phase 4 adds a Windows interface around the same tested scanner, matcher,
 artwork provider, converter, and exporter used by the command-line harness.
 

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "supercover"
-version = "0.6.0"
+version = "0.6.0rc2"
 description = "Find, convert, and install GBA cover art for SuperR7"
 readme = "README.md"
 requires-python = ">=3.10"

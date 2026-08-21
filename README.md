@@ -13,6 +13,10 @@ matching engine, curated Libretro artwork provider, hardware-compatible
 `.sfcov` exporter, responsive Windows desktop interface, and portable x64
 executable. The user always chooses where exported files go.
 
+The current `0.6.0-rc.2` preview introduces a full dark interface using
+SuperCover's blue-and-gold identity while retaining the review-first workflow
+and high-contrast match states.
+
 ## Safety principles
 
 - ROMs are read only for their filename, size, CRC-32, and SHA-1.
@@ -24,9 +28,9 @@ executable. The user always chooses where exported files go.
 
 ## Portable Windows app
 
-Every successful **Build portable Windows app** workflow run provides
-`SuperCover-0.6.0-windows-x64.zip`. Download and extract that archive, then
-double-click `SuperCover.exe`. It needs no installer, Python installation,
+The current preview release provides
+`SuperCover-0.6.0-rc.2-windows-x64.zip`. Download and extract that archive,
+then double-click `SuperCover.exe`. It needs no installer, Python installation,
 administrator rights, or registry changes. See the
 [portable Windows guide](docs/PORTABLE_WINDOWS.md).
 

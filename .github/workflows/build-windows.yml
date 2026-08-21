@@ -43,7 +43,7 @@ jobs:
             throw "Frozen self-test report is invalid"
           }
           $version = (Get-Item ".\dist\SuperCover.exe").VersionInfo
-          if ($version.ProductVersion -ne "0.6.0.0") {
+          if ($version.ProductVersion -ne "0.6.0-rc.2") {
             throw "Unexpected product version: $($version.ProductVersion)"
           }
           Get-Content -LiteralPath $report
@@ -59,11 +59,11 @@ jobs:
           "$exeHash  SuperCover.exe" | Set-Content `
             ".\release\SHA256SUMS.txt" -Encoding ascii
           Compress-Archive -Path ".\release\*" `
-            -DestinationPath ".\SuperCover-0.6.0-windows-x64.zip" -Force
-          Get-FileHash ".\SuperCover-0.6.0-windows-x64.zip" -Algorithm SHA256
+            -DestinationPath ".\SuperCover-0.6.0-rc.2-windows-x64.zip" -Force
+          Get-FileHash ".\SuperCover-0.6.0-rc.2-windows-x64.zip" -Algorithm SHA256
       - name: Upload the portable application
         uses: actions/upload-artifact@v7
         with:
-          path: SuperCover-0.6.0-windows-x64.zip
+          path: SuperCover-0.6.0-rc.2-windows-x64.zip
           archive: false
           retention-days: 30
